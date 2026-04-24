@@ -16,15 +16,19 @@ rpc-set() {
 def main():
     parser = argparse.ArgumentParser(description="EVM RPC Picker - TUI tool to select EVM RPC URLs")
     parser.add_argument("--init", action="store_true", help="Print shell initialization snippet for Bash/Zsh")
-    
-    # If the user is piping or in a non-interactive shell, we might want to handle it,
-    # but Textual handles terminal detection.
+    parser.add_argument("--clear-cache", action="store_true", help="Clear the local chain data cache")
     
     args = parser.parse_args()
 
     if args.init:
         print_init_snippet()
         return
+
+    if args.clear_cache:
+        from evm_rpc_picker.tui import CACHE_FILE
+        if CACHE_FILE.exists():
+            CACHE_FILE.unlink()
+        # We don't print anything to stdout to avoid messing up the TUI/shell capture
 
     app = ChainRPCPicker()
     # Run the app. The app.exit(result) call will return 'result' here.

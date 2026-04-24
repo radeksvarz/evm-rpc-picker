@@ -42,10 +42,11 @@ rpc-set
 | `Esc` | Go back or close the RPC selection screen |
 
 ## Caching Details
-The tool fetches data from `https://chainid.network/chains.json` and caches it locally for 24 hours.
+The tool fetches data from `https://chainlist.org/rpcs.json` and caches it locally for 24 hours.
 
 - **Cache Location**: `~/.cache/evm-rpc-picker/chains.json`
-- **Cache Duration**: 24 hours (can be bypassed with the `r` key).
+- **Cache Duration**: 24 hours.
+- **Force Refresh**: Press `r` inside the app or run `evm-rpc-picker --clear-cache`.
 
 ## Development
 ```bash

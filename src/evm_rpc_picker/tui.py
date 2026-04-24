@@ -25,7 +25,7 @@ from textual.widgets import (
 
 CACHE_DIR = Path(user_cache_dir("evm-rpc-picker"))
 CACHE_FILE = CACHE_DIR / "chains.json"
-CHAINS_URL = "https://chainid.network/chains.json"
+CHAINS_URL = "https://chainlist.org/rpcs.json"
 
 class RPCListItem(ListItem):
     def __init__(self, url: str):
@@ -70,6 +70,12 @@ class RPCScreen(ModalScreen[str]):
         background: #181825;
         margin: 1 0;
         width: 100%;
+    }
+
+    #button-row {
+        height: 3;
+        width: 100%;
+        content-align: center middle;
     }
 
     #rpc-list:focus > ListItem.--highlight {
@@ -128,14 +134,19 @@ class RPCScreen(ModalScreen[str]):
     def __init__(self, chain: Dict[str, Any]):
         super().__init__()
         self.chain = chain
-        # Filter out RPCs with placeholders or non-http
-        self.rpcs = [url for url in chain.get("rpc", []) if isinstance(url, str) and "${" not in url and url.startswith("http")]
+        # Extract URLs from list of objects (chainlist.org schema) or list of strings
+        rpc_data = chain.get("rpc", [])
+        self.rpcs = []
+        for r in rpc_data:
+            url = r.get("url") if isinstance(r, dict) else r
+            if isinstance(url, str) and "${" not in url and url.startswith("http"):
+                self.rpcs.append(url)
 
     def compose(self) -> ComposeResult:
         with Vertical(id="rpc-container"):
             yield Label(f"📡 RPC URLs for {self.chain['name']} (ID: {self.chain['chainId']})", id="rpc-title")
             yield ListView(id="rpc-list")
-            with Horizontal():
+            with Horizontal(id="button-row"):
                 yield Button("Back", id="cancel-btn")
                 yield Static(expand=True)
                 yield Label("Select an RPC to set ETH_RPC_URL", classes="hint")
