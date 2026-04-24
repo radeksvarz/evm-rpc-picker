@@ -1,0 +1,23 @@
+[project]
+name = "evm-rpc-picker"
+version = "0.1.0"
+description = "A modern TUI tool to search for EVM chains and select an RPC URL."
+authors = [{ name = "Radek", email = "radek@example.com" }]
+dependencies = [
+    "textual>=0.86.0",
+    "httpx>=0.27.0",
+    "platformdirs>=4.2.0",
+]
+requires-python = ">=3.12"
+readme = "README.md"
+license = { text = "MIT" }
+
+[project.scripts]
+evm-rpc-picker = "evm_rpc_picker.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/evm_rpc_picker"]
