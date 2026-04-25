@@ -25,9 +25,8 @@ def main():
         return
 
     if args.clear_cache:
-        from evm_rpc_picker.tui import CACHE_FILE
-        if CACHE_FILE.exists():
-            CACHE_FILE.unlink()
+        from evm_rpc_picker.models import clear_cache
+        clear_cache()
         # We don't print anything to stdout to avoid messing up the TUI/shell capture
 
     app = ChainRPCPicker()
