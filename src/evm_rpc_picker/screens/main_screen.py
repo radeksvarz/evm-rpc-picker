@@ -137,7 +137,7 @@ class MainScreen(Screen[str]):
             self.run_worker(self.check_system_latency())
             
         table = self.query_one(ChainsTable)
-        table.add_columns("Chain Name", "ID", "Currency")
+        table.add_columns("Chain Name", "ID", "Short", "Currency")
         table.cursor_type = "row"
         self.update_filter_status()
         self.query_one(SearchInput).focus()
@@ -189,6 +189,7 @@ class MainScreen(Screen[str]):
             table.add_row(
                 chain.get("name", "Unknown"),
                 str(chain.get("chainId", "N/A")),
+                chain.get("shortName", "N/A"),
                 native,
                 key=str(i)
             )
