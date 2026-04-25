@@ -3,6 +3,15 @@ from textual.containers import Horizontal
 from textual.widgets import Label, ListItem
 
 class RPCListItem(ListItem):
+    DEFAULT_CSS = """
+    RPCListItem {
+        height: 1;
+        padding: 0 1;
+    }
+    RPCListItem > Horizontal {
+        height: 1;
+    }
+    """
     def __init__(self, url: str):
         super().__init__()
         self.url = url

@@ -57,6 +57,21 @@ class RPCScreen(ModalScreen[str]):
         margin-top: 1;
     }
 
+    RPCListItem, RPCListItem > Horizontal {
+        height: 1;
+        min-height: 1;
+        max-height: 1;
+        padding: 0 1;
+    }
+
+    RPCListItem:hover {
+        background: #313244;
+    }
+
+    RPCListItem.--highlight {
+        background: #89b4fa 30%;
+    }
+
     Button {
         margin: 0 1;
         background: #313244;
@@ -80,7 +95,17 @@ class RPCScreen(ModalScreen[str]):
     def __init__(self, chain: Dict[str, Any]):
         super().__init__()
         self.chain = chain
-        self.rpc_urls = [r["url"] for r in chain.get("rpc", []) if r.get("url") and not r["url"].startswith("wss://")]
+        self.rpc_urls = []
+        raw_rpc = chain.get("rpc", [])
+        for r in raw_rpc:
+            url = None
+            if isinstance(r, str):
+                url = r
+            elif isinstance(r, dict):
+                url = r.get("url")
+            
+            if url and not url.startswith("wss://"):
+                self.rpc_urls.append(url)
 
     def compose(self) -> ComposeResult:
         with Container(id="rpc-container"):
@@ -105,9 +130,8 @@ class RPCScreen(ModalScreen[str]):
             rpc_list.append(item)
             
         # Run latency checks in background
-        self.check_latencies(items)
+        self.run_worker(self.check_latencies(items))
 
-    @work
     async def check_latencies(self, items: List[RPCListItem]) -> None:
         async with httpx.AsyncClient(timeout=2.5) as client:
             tasks = [self.ping_rpc(client, item) for item in items]
@@ -115,11 +139,15 @@ class RPCScreen(ModalScreen[str]):
             
         # Sort by latency
         rpc_list = self.query_one("#rpc-list", ListView)
-        sorted_items = sorted(items, key=lambda x: (x.latency is None, x.latency or 9999))
+        # Get data from current items before clearing
+        items_data = [(item.url, item.latency) for item in items]
+        sorted_data = sorted(items_data, key=lambda x: (x[1] is None, x[1] or 9999))
         
         rpc_list.clear()
-        for item in sorted_items:
-            rpc_list.append(item)
+        for url, latency in sorted_data:
+            new_item = RPCListItem(url)
+            rpc_list.append(new_item)
+            new_item.update_latency(latency)
         
         # Reset selection to top after sort
         await asyncio.sleep(0.05)
