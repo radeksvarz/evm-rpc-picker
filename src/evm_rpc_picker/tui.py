@@ -246,6 +246,20 @@ class RPCScreen(ModalScreen[str]):
         if isinstance(event.item, RPCListItem):
             self.dismiss(event.item.url)
 
+class SearchInput(Input):
+    BINDINGS = [
+        ("enter", "submit", "Select"),
+        ("escape", "app.quit", "Exit"),
+        ("ctrl+r", "app.load_data", "Refresh Data"),
+    ]
+
+class ChainsTable(DataTable):
+    BINDINGS = [
+        ("enter", "select_cursor", "Select"),
+        ("escape", "app.quit", "Exit"),
+        ("ctrl+r", "app.load_data", "Refresh Data"),
+    ]
+
 class ChainRPCPicker(App[str]):
     """TUI to search chains and select RPC URL."""
     
@@ -306,9 +320,9 @@ class ChainRPCPicker(App[str]):
     """
 
     BINDINGS = [
-        ("q", "quit", "Quit"),
-        ("f", "focus('search-input')", "Focus Search"),
-        ("r", "load_data", "Refresh Data"),
+        ("enter", "submit", "Select"),
+        ("escape", "quit", "Exit"),
+        ("ctrl+r", "load_data", "Refresh Data"),
     ]
 
     def __init__(self):
@@ -319,17 +333,20 @@ class ChainRPCPicker(App[str]):
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         with Vertical(id="search-container"):
-            yield Input(placeholder="Search by name or chain ID (e.g. Ethereum, 1, Polygon...)", id="search-input")
+            yield SearchInput(placeholder="Search by name or chain ID (e.g. Ethereum, 1, Polygon...)", id="search-input")
         with Container(id="list-container"):
-            yield DataTable(id="chain-table")
+            yield ChainsTable(id="chain-table")
         yield Footer()
 
     async def on_mount(self) -> None:
-        table = self.query_one(DataTable)
+        table = self.query_one(ChainsTable)
         table.add_columns("Chain Name", "ID", "Currency")
         table.cursor_type = "row"
-        self.query_one(Input).focus()
+        self.query_one(SearchInput).focus()
         await self.load_data()
+
+    def action_load_data(self) -> None:
+        self.run_worker(self.load_data())
 
     async def load_data(self) -> None:
         """Load chains data from cache or network."""
@@ -360,7 +377,7 @@ class ChainRPCPicker(App[str]):
             self.notify(f"Error loading data: {e}", severity="error")
 
     def update_table(self, chains: List[Dict[str, Any]]) -> None:
-        table = self.query_one(DataTable)
+        table = self.query_one(ChainsTable)
         table.clear()
         self.filtered_chains = chains
         for i, chain in enumerate(chains):
@@ -387,7 +404,7 @@ class ChainRPCPicker(App[str]):
 
     @on(Input.Submitted, "#search-input")
     def on_input_submitted(self) -> None:
-        table = self.query_one(DataTable)
+        table = self.query_one(ChainsTable)
         if table.cursor_row is not None and 0 <= table.cursor_row < len(self.filtered_chains):
             chain = self.filtered_chains[table.cursor_row]
             self.push_screen(RPCScreen(chain), self.on_rpc_selected)
@@ -401,7 +418,7 @@ class ChainRPCPicker(App[str]):
     def on_key(self, event: events.Key) -> None:
         if event.key in ("up", "down", "pageup", "pagedown"):
             if self.focused and self.focused.id == "search-input":
-                table = self.query_one(DataTable)
+                table = self.query_one(ChainsTable)
                 if event.key == "up":
                     table.action_cursor_up()
                 elif event.key == "down":
