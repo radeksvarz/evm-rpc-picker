@@ -9,6 +9,7 @@ import httpx
 from platformdirs import user_cache_dir
 from textual import events, on, work
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import (
@@ -251,6 +252,7 @@ class SearchInput(Input):
         ("enter", "submit", "Select"),
         ("escape", "app.quit", "Exit"),
         ("ctrl+r", "app.load_data", "Refresh Data"),
+        ("ctrl+t", "app.toggle_filter", "Toggle Filter"),
     ]
 
 class ChainsTable(DataTable):
@@ -258,6 +260,7 @@ class ChainsTable(DataTable):
         ("enter", "select_cursor", "Select"),
         ("escape", "app.quit", "Exit"),
         ("ctrl+r", "app.load_data", "Refresh Data"),
+        ("ctrl+t", "app.toggle_filter", "Toggle Filter"),
     ]
 
 class ChainRPCPicker(App[str]):
@@ -285,12 +288,26 @@ class ChainRPCPicker(App[str]):
         height: auto;
         padding: 1 2;
         background: #181825;
+        align: left middle;
     }
 
     #search-input {
+        width: 1fr;
         border: solid #313244;
         background: #1e1e2e;
         color: #cdd6f4;
+    }
+
+    #filter-status {
+        width: 18;
+        margin-left: 2;
+        background: #313244;
+        color: #f5c2e7;
+        text-style: bold;
+        text-align: center;
+        border: solid #45475a;
+        content-align: center middle;
+        height: 3;
     }
 
     #search-input:focus {
@@ -323,17 +340,20 @@ class ChainRPCPicker(App[str]):
         ("enter", "submit", "Select"),
         ("escape", "quit", "Exit"),
         ("ctrl+r", "load_data", "Refresh Data"),
+        ("ctrl+t", "toggle_filter", "Toggle Filter"),
     ]
 
     def __init__(self):
         super().__init__()
         self.chains: List[Dict[str, Any]] = []
         self.filtered_chains: List[Dict[str, Any]] = []
+        self.filter_mode: str = "all"  # all, mainnet, testnet
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        with Vertical(id="search-container"):
+        with Horizontal(id="search-container"):
             yield SearchInput(placeholder="Search by name or chain ID (e.g. Ethereum, 1, Polygon...)", id="search-input")
+            yield Label("Filter: ALL", id="filter-status")
         with Container(id="list-container"):
             yield ChainsTable(id="chain-table")
         yield Footer()
@@ -342,11 +362,31 @@ class ChainRPCPicker(App[str]):
         table = self.query_one(ChainsTable)
         table.add_columns("Chain Name", "ID", "Currency")
         table.cursor_type = "row"
+        self.update_filter_binding()
         self.query_one(SearchInput).focus()
         await self.load_data()
 
+    def update_filter_binding(self) -> None:
+        mode_label = self.filter_mode.upper()
+        try:
+            self.query_one("#filter-status", Label).update(f"Filter: {mode_label}")
+        except Exception:
+            pass
+
     def action_load_data(self) -> None:
         self.run_worker(self.load_data())
+
+    def action_toggle_filter(self) -> None:
+        modes = ["all", "mainnet", "testnet"]
+        current_idx = modes.index(self.filter_mode)
+        self.filter_mode = modes[(current_idx + 1) % len(modes)]
+        
+        # Update bindings in the footer
+        self.update_filter_binding()
+        
+        # Re-trigger search to update table
+        search_input = self.query_one(SearchInput)
+        self.on_search(Input.Changed(search_input, search_input.value))
 
     async def load_data(self) -> None:
         """Load chains data from cache or network."""
@@ -355,7 +395,7 @@ class ChainRPCPicker(App[str]):
             if datetime.now() - mtime < timedelta(hours=24):
                 try:
                     with open(CACHE_FILE, "r") as f:
-                        self.chains = json.load(f)
+                        self.chains = sorted(json.load(f), key=lambda x: x.get("chainId", 0))
                         self.update_table(self.chains)
                         return
                 except Exception:
@@ -368,8 +408,8 @@ class ChainRPCPicker(App[str]):
                 response = await client.get(CHAINS_URL)
                 response.raise_for_status()
                 data = response.json()
-                # Only keep chains that have at least one RPC
-                self.chains = [c for c in data if c.get("rpc")]
+                # Only keep chains that have at least one RPC and sort by chainId
+                self.chains = sorted([c for c in data if c.get("rpc")], key=lambda x: x.get("chainId", 0))
                 with open(CACHE_FILE, "w") as f:
                     json.dump(self.chains, f)
                 self.update_table(self.chains)
@@ -392,14 +432,22 @@ class ChainRPCPicker(App[str]):
     @on(Input.Changed, "#search-input")
     def on_search(self, event: Input.Changed) -> None:
         query = event.value.lower()
-        if not query:
-            self.update_table(self.chains)
-            return
-
-        filtered = [
-            c for c in self.chains
-            if query in c.get("name", "").lower() or query in str(c.get("chainId", ""))
-        ]
+        
+        filtered = self.chains
+        
+        # Apply network type filter
+        if self.filter_mode == "mainnet":
+            filtered = [c for c in filtered if not c.get("testnet", False)]
+        elif self.filter_mode == "testnet":
+            filtered = [c for c in filtered if c.get("testnet", False)]
+        
+        # Apply search query
+        if query:
+            filtered = [
+                c for c in filtered
+                if query in c.get("name", "").lower() or query in str(c.get("chainId", ""))
+            ]
+        
         self.update_table(filtered)
 
     @on(Input.Submitted, "#search-input")
