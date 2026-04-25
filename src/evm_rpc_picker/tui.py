@@ -84,10 +84,15 @@ class RPCScreen(ModalScreen[str]):
         min-width: 14;
     }
 
-    #rpc-list:focus > ListItem.--highlight {
+    ListItem.--highlight {
         background: #45475a;
-        color: #89b4fa;
         text-style: bold;
+        color: #89b4fa;
+    }
+
+    #rpc-list:focus > ListItem.--highlight {
+        background: #585b70;
+        color: #f5c2e7;
     }
 
     RPCListItem {
@@ -161,6 +166,8 @@ class RPCScreen(ModalScreen[str]):
         if not self.rpcs:
             list_view.append(ListItem(Label("[red]No public RPCs found (all require API keys)[/red]")))
         else:
+            list_view.index = 0
+            self.set_focus(list_view)
             self.check_latencies()
 
     @work(exclusive=True)
@@ -186,9 +193,12 @@ class RPCScreen(ModalScreen[str]):
             # Update latency display on the new item
             new_item.update_latency(latencies.get(url))
         
+        # Wait a bit for the items to be processed in the DOM
+        await asyncio.sleep(0.05)
+        
         if self.rpcs:
             list_view.index = 0
-            list_view.focus()
+            self.set_focus(list_view)
 
     async def ping_rpc(self, client: httpx.AsyncClient, item: RPCListItem) -> None:
         start_time = time.perf_counter()
@@ -374,6 +384,13 @@ class ChainRPCPicker(App[str]):
             if query in c.get("name", "").lower() or query in str(c.get("chainId", ""))
         ]
         self.update_table(filtered)
+
+    @on(Input.Submitted, "#search-input")
+    def on_input_submitted(self) -> None:
+        table = self.query_one(DataTable)
+        if table.cursor_row is not None and 0 <= table.cursor_row < len(self.filtered_chains):
+            chain = self.filtered_chains[table.cursor_row]
+            self.push_screen(RPCScreen(chain), self.on_rpc_selected)
 
     @on(DataTable.RowSelected)
     def on_row_selected(self, event: DataTable.RowSelected) -> None:
