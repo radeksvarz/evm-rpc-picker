@@ -29,8 +29,30 @@ async def fetch_chains() -> List[Dict[str, Any]]:
         response = await client.get(CHAINS_URL)
         response.raise_for_status()
         data = response.json()
-        # Only keep chains that have at least one RPC and sort by chainId
-        chains = sorted([c for c in data if c.get("rpc")], key=lambda x: x.get("chainId", 0))
+        
+        # Filter and process chains
+        chains = []
+        for c in data:
+            if not c.get("rpc"):
+                continue
+                
+            # Filter out RPCs that require API keys (Infura, Alchemy, etc.)
+            filtered_rpc = []
+            for r in c.get("rpc", []):
+                url = r["url"] if isinstance(r, dict) else r
+                if not url:
+                    continue
+                # Exclude common providers that usually require keys in public lists
+                if any(p in url.lower() for p in ["infura.io", "alchemy.com", "api_key", "api-key"]):
+                    continue
+                filtered_rpc.append(r)
+            
+            if filtered_rpc:
+                c["rpc"] = filtered_rpc
+                chains.append(c)
+                
+        chains.sort(key=lambda x: x.get("chainId", 0))
+        
         with open(CACHE_FILE, "w") as f:
             json.dump(chains, f)
         return chains
