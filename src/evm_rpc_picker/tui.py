@@ -437,9 +437,9 @@ class ChainRPCPicker(App[str]):
         
         # Apply network type filter
         if self.filter_mode == "mainnet":
-            filtered = [c for c in filtered if not c.get("testnet", False)]
+            filtered = [c for c in filtered if not c.get("isTestnet", False)]
         elif self.filter_mode == "testnet":
-            filtered = [c for c in filtered if c.get("testnet", False)]
+            filtered = [c for c in filtered if c.get("isTestnet", False)]
         
         # Apply search query
         if query:
