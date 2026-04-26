@@ -1,4 +1,3 @@
-from typing import Optional
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
@@ -9,9 +8,7 @@ from textual.widgets import Button, Checkbox, Input, Label, TextArea
 class AddRPCModal(ModalScreen[dict]):
     """Modal to add or edit a custom RPC."""
 
-    def __init__(
-        self, chain_name: str, chain_id: int, initial_data: Optional[dict] = None
-    ):
+    def __init__(self, chain_name: str, chain_id: int, initial_data: dict | None = None):
         super().__init__()
         self.chain_name = chain_name
         self.chain_id = chain_id
@@ -88,9 +85,7 @@ class AddRPCModal(ModalScreen[dict]):
     def compose(self) -> ComposeResult:
         with Vertical(id="add-rpc-container"):
             title = "Edit RPC" if self.is_edit else "Add Custom RPC"
-            yield Label(
-                f"{title} - {self.chain_name} ({self.chain_id})", classes="modal-title"
-            )
+            yield Label(f"{title} - {self.chain_name} ({self.chain_id})", classes="modal-title")
 
             yield Label("RPC URL", classes="field-label")
             yield Input(
@@ -113,9 +108,7 @@ class AddRPCModal(ModalScreen[dict]):
             yield TextArea(self.initial_data.get("note", ""), id="note-input")
 
             yield Label("Secret Note @ keyring", classes="field-label")
-            yield TextArea(
-                self.initial_data.get("secret_note", ""), id="secret-note-input"
-            )
+            yield TextArea(self.initial_data.get("secret_note", ""), id="secret-note-input")
 
             with Horizontal(classes="modal-buttons"):
                 yield Button("Cancel [ESC]", id="cancel", variant="error")

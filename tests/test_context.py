@@ -1,5 +1,7 @@
 from unittest.mock import patch
+
 import pytest
+
 from evm_rpc_picker.context import ContextDetector
 
 

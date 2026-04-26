@@ -1,7 +1,8 @@
 import os
 import time
+from typing import Any
+
 import httpx
-from typing import Any, Optional
 from textual import work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
@@ -41,7 +42,7 @@ class EnvStatus(Horizontal):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.can_focus = True
-        self.current_rpc: Optional[str] = os.environ.get("ETH_RPC_URL")
+        self.current_rpc: str | None = os.environ.get("ETH_RPC_URL")
         self.status_label = Label(id="env-status-label")
         self.latency_label = Label("--- ms", id="env-latency-label")
 
@@ -80,11 +81,7 @@ class EnvStatus(Horizontal):
                 if response.status_code == 200:
                     latency = (time.time() - start) * 1000
                     color = (
-                        "#00ff00"
-                        if latency < 200
-                        else "#ffff00"
-                        if latency < 500
-                        else "#ff0000"
+                        "#00ff00" if latency < 200 else "#ffff00" if latency < 500 else "#ff0000"
                     )
                     self.latency_label.update(f"[{color}]{latency:.0f} ms[/{color}]")
                 else:

@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 from platformdirs import user_cache_dir
@@ -20,21 +20,21 @@ def get_cache_file() -> Path:
     return DEFAULT_CACHE_FILE
 
 
-def get_cached_chains() -> Optional[List[Dict[str, Any]]]:
+def get_cached_chains() -> list[dict[str, Any]] | None:
     """Return cached chains if valid (less than 24h old)."""
     cache_file = get_cache_file()
     if cache_file.exists():
         mtime = datetime.fromtimestamp(cache_file.stat().st_mtime)
         if datetime.now() - mtime < timedelta(hours=24):
             try:
-                with open(cache_file, "r") as f:
+                with open(cache_file) as f:
                     return sorted(json.load(f), key=lambda x: x.get("chainId", 0))
             except Exception:
                 pass
     return None
 
 
-async def fetch_chains() -> List[Dict[str, Any]]:
+async def fetch_chains() -> list[dict[str, Any]]:
     """Fetch chains from chainlist.org and cache them."""
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     async with httpx.AsyncClient() as client:
@@ -56,8 +56,7 @@ async def fetch_chains() -> List[Dict[str, Any]]:
                     continue
                 # Exclude common providers that usually require keys in public lists
                 if any(
-                    p in url.lower()
-                    for p in ["infura.io", "alchemy.com", "api_key", "api-key"]
+                    p in url.lower() for p in ["infura.io", "alchemy.com", "api_key", "api-key"]
                 ):
                     continue
                 filtered_rpc.append(r)

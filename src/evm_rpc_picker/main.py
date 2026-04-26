@@ -1,4 +1,5 @@
 import argparse
+
 from evm_rpc_picker.tui import ChainRPCPicker
 
 
@@ -15,9 +16,7 @@ rpc-set() {
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="EVM RPC Picker - TUI tool to select EVM RPC URLs"
-    )
+    parser = argparse.ArgumentParser(description="EVM RPC Picker - TUI tool to select EVM RPC URLs")
     parser.add_argument(
         "--init",
         action="store_true",

@@ -1,8 +1,10 @@
 import os
+
+import httpx
 import pytest
 import respx
-import httpx
-from evm_rpc_picker.models import fetch_chains, CHAINS_URL
+
+from evm_rpc_picker.models import CHAINS_URL, fetch_chains
 
 
 @pytest.mark.asyncio

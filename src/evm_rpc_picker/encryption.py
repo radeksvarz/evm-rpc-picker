@@ -1,6 +1,5 @@
 import base64
 import os
-from typing import Optional, Tuple
 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
@@ -24,7 +23,7 @@ class EncryptionManager:
         return base64.urlsafe_b64encode(kdf.derive(password.encode()))
 
     @staticmethod
-    def encrypt(data: str, password: str) -> Tuple[str, str]:
+    def encrypt(data: str, password: str) -> tuple[str, str]:
         """Encrypt data with a password. Returns (encrypted_blob_b64, salt_b64)."""
         salt = os.urandom(16)
         key = EncryptionManager.derive_key(password, salt)
@@ -36,7 +35,7 @@ class EncryptionManager:
         )
 
     @staticmethod
-    def decrypt(encrypted_blob_b64: str, salt_b64: str, password: str) -> Optional[str]:
+    def decrypt(encrypted_blob_b64: str, salt_b64: str, password: str) -> str | None:
         """Decrypt data with a password and salt. Returns None if decryption fails."""
         try:
             salt = base64.b64decode(salt_b64)

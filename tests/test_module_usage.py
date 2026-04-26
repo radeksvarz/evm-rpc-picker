@@ -1,4 +1,5 @@
 from unittest.mock import patch
+
 from evm_rpc_picker import pick_rpc
 
 

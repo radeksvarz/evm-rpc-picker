@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+
 from evm_rpc_picker.config import ConfigManager, EncryptionManager
 
 
@@ -141,9 +142,7 @@ def test_rpc_secrets(temp_config):
         assert loaded["status"] == "ok"
 
         # Wrong password
-        assert (
-            cm.load_rpc_secret("rpc2", password="wrong")["status"] == "wrong_password"
-        )
+        assert cm.load_rpc_secret("rpc2", password="wrong")["status"] == "wrong_password"
 
 
 def test_delete_secret(temp_config):
@@ -157,9 +156,7 @@ def test_delete_secret_error(temp_config):
     cm, _, _ = temp_config
     import keyring
 
-    with patch(
-        "keyring.delete_password", side_effect=keyring.errors.PasswordDeleteError
-    ):
+    with patch("keyring.delete_password", side_effect=keyring.errors.PasswordDeleteError):
         cm.delete_secret("rpc1")
         # Should not raise
 

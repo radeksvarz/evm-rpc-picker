@@ -1,12 +1,12 @@
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ..tui import ChainRPCPicker
 
 from textual import events, on
 from textual.app import ComposeResult
-from textual.containers import Container, Horizontal
 from textual.binding import Binding
+from textual.containers import Container, Horizontal
 from textual.screen import Screen
 from textual.widgets import DataTable, Footer, Header, Input, Label
 
@@ -94,8 +94,8 @@ class MainScreen(Screen[str]):
 
     def __init__(self) -> None:
         super().__init__()
-        self.chains: List[Dict[str, Any]] = []
-        self.filtered_chains: List[Dict[str, Any]] = []
+        self.chains: list[dict[str, Any]] = []
+        self.filtered_chains: list[dict[str, Any]] = []
         self.filter_type: str = "all"  # all, mainnet, testnet
         self.filter_favorites_only: bool = False
 
@@ -142,9 +142,7 @@ class MainScreen(Screen[str]):
 
     def action_toggle_favorite(self) -> None:
         table = self.query_one(ChainsTable)
-        if table.cursor_row is not None and 0 <= table.cursor_row < len(
-            self.filtered_chains
-        ):
+        if table.cursor_row is not None and 0 <= table.cursor_row < len(self.filtered_chains):
             chain = self.filtered_chains[table.cursor_row]
             chain_id = chain.get("chainId")
             if chain_id is None:
@@ -162,9 +160,7 @@ class MainScreen(Screen[str]):
 
     def action_toggle_global_favorite(self) -> None:
         table = self.query_one(ChainsTable)
-        if table.cursor_row is not None and 0 <= table.cursor_row < len(
-            self.filtered_chains
-        ):
+        if table.cursor_row is not None and 0 <= table.cursor_row < len(self.filtered_chains):
             chain = self.filtered_chains[table.cursor_row]
             chain_id = chain.get("chainId")
             if chain_id is not None:
@@ -199,7 +195,7 @@ class MainScreen(Screen[str]):
         except Exception as e:
             self.app.notify(f"Error loading data: {e}", severity="error")
 
-    def update_table(self, chains: List[Dict[str, Any]]) -> None:
+    def update_table(self, chains: list[dict[str, Any]]) -> None:
         table = self.query_one(ChainsTable)
         table.clear()
 
@@ -216,7 +212,7 @@ class MainScreen(Screen[str]):
         }
 
         # Sort: Local > Global Favorite > Others
-        def sort_key(c: Dict[str, Any]) -> int:
+        def sort_key(c: dict[str, Any]) -> int:
             cid = c.get("chainId")
             if cid in fav_local or cid in context_ids:
                 return 0
@@ -283,9 +279,7 @@ class MainScreen(Screen[str]):
         # 3. Apply search query
         if query:
             filtered = [
-                c
-                for c in filtered
-                if query in c["name"].lower() or query in str(c["chainId"])
+                c for c in filtered if query in c["name"].lower() or query in str(c["chainId"])
             ]
 
         self.filtered_chains = filtered
@@ -306,7 +300,7 @@ class MainScreen(Screen[str]):
                 chain = self.filtered_chains[idx]
                 self.app.push_screen(RPCScreen(chain), self._on_rpc_selected)
 
-    def _on_rpc_selected(self, rpc_url: Optional[str]) -> None:
+    def _on_rpc_selected(self, rpc_url: str | None) -> None:
         if rpc_url:
             self.app.exit(rpc_url)
 
@@ -322,7 +316,7 @@ class MainScreen(Screen[str]):
                 # Actually, if we focus it here, the event might bubble up or be handled by search.
                 event.stop()
 
-    def _on_init_confirm(self, confirmed: Optional[bool]) -> None:
+    def _on_init_confirm(self, confirmed: bool | None) -> None:
         if confirmed:
             self.app.config.init_local_config()
             self.app.notify("Created .rpc-picker.toml")

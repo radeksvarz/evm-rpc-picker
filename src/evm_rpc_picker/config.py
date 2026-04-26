@@ -1,7 +1,7 @@
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, cast
+from typing import Any, cast
 
 import keyring
 import tomlkit
@@ -19,11 +19,11 @@ class ConfigManager:
     LOCAL_CONFIG_FILE = Path("./.rpc-picker.toml")
 
     def __init__(self) -> None:
-        self.global_config: Dict[str, Any] = self._load_toml(self.GLOBAL_CONFIG_FILE)
-        self.local_config: Dict[str, Any] = self._load_toml(self.LOCAL_CONFIG_FILE)
+        self.global_config: dict[str, Any] = self._load_toml(self.GLOBAL_CONFIG_FILE)
+        self.local_config: dict[str, Any] = self._load_toml(self.LOCAL_CONFIG_FILE)
         self.encryption_manager = EncryptionManager()
 
-    def _load_toml(self, path: Path) -> Dict[str, Any]:
+    def _load_toml(self, path: Path) -> dict[str, Any]:
         """Load configuration from a TOML file."""
         if path.exists():
             try:
@@ -35,7 +35,7 @@ class ConfigManager:
 
     # --- Favorites ---
 
-    def get_favorites(self, project_only: bool = False) -> Set[int]:
+    def get_favorites(self, project_only: bool = False) -> set[int]:
         """Get a set of favorite chain IDs from both configs or just local."""
         favorites = set(self.local_config.get("favorites", []))
         if not project_only:
@@ -66,7 +66,7 @@ class ConfigManager:
         """Store a secret value in the system keyring."""
         keyring.set_password(self.APP_NAME, key_name, secret_value)
 
-    def get_secret(self, key_name: str) -> Optional[str]:
+    def get_secret(self, key_name: str) -> str | None:
         """Retrieve a secret value from the system keyring."""
         return keyring.get_password(self.APP_NAME, key_name)
 
@@ -82,7 +82,7 @@ class ConfigManager:
         key_name: str,
         api_key: str,
         secret_note: str = "",
-        password: Optional[str] = None,
+        password: str | None = None,
     ) -> None:
         """Save API key and secret note to keyring, optionally encrypted with a password."""
         data = {
@@ -99,9 +99,7 @@ class ConfigManager:
         else:
             self.set_secret(key_name, json.dumps(data))
 
-    def load_rpc_secret(
-        self, key_name: str, password: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def load_rpc_secret(self, key_name: str, password: str | None = None) -> dict[str, Any]:
         """Load and optionally decrypt RPC secret from keyring."""
         raw_val = self.get_secret(key_name)
         if not raw_val:
@@ -113,18 +111,16 @@ class ConfigManager:
                 if not password:
                     return {"status": "needs_password", "encrypted": True}
 
-                decrypted_json = EncryptionManager.decrypt(
-                    data["blob"], data["salt"], password
-                )
+                decrypted_json = EncryptionManager.decrypt(data["blob"], data["salt"], password)
                 if not decrypted_json:
                     return {"status": "wrong_password", "encrypted": True}
 
-                result = cast(Dict[str, Any], json.loads(decrypted_json))
+                result = cast(dict[str, Any], json.loads(decrypted_json))
                 result["status"] = "ok"
                 return result
 
             data["status"] = "ok"
-            return cast(Dict[str, Any], data)
+            return cast(dict[str, Any], data)
         except Exception:
             return {"status": "error"}
 
@@ -141,7 +137,7 @@ class ConfigManager:
             return parts[0] + "/v2/${API_KEY}", parts[1]
         return url, ""
 
-    def get_custom_rpcs(self, chain_id: int) -> List[Dict[str, Any]]:
+    def get_custom_rpcs(self, chain_id: int) -> list[dict[str, Any]]:
         """Get custom RPCs for a chain from both configs."""
         # Merge global and local custom RPCs
         global_rpcs = self.global_config.get("custom_rpcs", {}).get(str(chain_id), [])
@@ -153,14 +149,14 @@ class ConfigManager:
         for rpc in local_rpcs:
             rpc["source"] = "project"
 
-        return cast(List[Dict[str, Any]], local_rpcs + global_rpcs)
+        return cast(list[dict[str, Any]], local_rpcs + global_rpcs)
 
     def add_custom_rpc(
         self,
         chain_id: int,
-        rpc_data: Dict[str, Any],
+        rpc_data: dict[str, Any],
         is_global: bool = False,
-        password: Optional[str] = None,
+        password: str | None = None,
     ) -> None:
         """Add a custom RPC to the specified config, handling secrets."""
         config = self.global_config if is_global else self.local_config
@@ -208,7 +204,7 @@ class ConfigManager:
         self,
         chain_id: int,
         rpc_id: str,
-        rpc_data: Dict[str, Any],
+        rpc_data: dict[str, Any],
         is_global: bool = False,
     ) -> None:
         """Update an existing custom RPC in the specified config."""
@@ -261,9 +257,7 @@ class ConfigManager:
             self._save_toml(self.LOCAL_CONFIG_FILE, config, is_global=False)
             self.local_config = config
 
-    def _save_toml(
-        self, path: Path, data: Dict[str, Any], is_global: bool = False
-    ) -> None:
+    def _save_toml(self, path: Path, data: dict[str, Any], is_global: bool = False) -> None:
         """Save configuration to a TOML file with comments."""
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -294,6 +288,6 @@ class ConfigManager:
     def init_local_config(self) -> None:
         """Create an empty local config file."""
         if not self.local_config_exists():
-            default_config: Dict[str, Any] = {"favorites": [], "custom_rpcs": {}}
+            default_config: dict[str, Any] = {"favorites": [], "custom_rpcs": {}}
             self._save_toml(self.LOCAL_CONFIG_FILE, default_config)
             self.local_config = default_config

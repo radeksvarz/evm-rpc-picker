@@ -1,13 +1,15 @@
-import os
 import json
-import pytest
+import os
 from unittest.mock import patch
-from evm_rpc_picker.tui import ChainRPCPicker
-from evm_rpc_picker.widgets.search_input import SearchInput
-from evm_rpc_picker.widgets.chains_table import ChainsTable
-from evm_rpc_picker.widgets.env_status import EnvStatus
+
+import pytest
+
 from evm_rpc_picker.screens.main_screen import MainScreen
 from evm_rpc_picker.screens.rpc_screen import RPCScreen
+from evm_rpc_picker.tui import ChainRPCPicker
+from evm_rpc_picker.widgets.chains_table import ChainsTable
+from evm_rpc_picker.widgets.env_status import EnvStatus
+from evm_rpc_picker.widgets.search_input import SearchInput
 
 # Mock data
 MOCK_CHAINS = [

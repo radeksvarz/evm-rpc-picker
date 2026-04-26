@@ -1,14 +1,14 @@
 import re
 import tomllib
 from pathlib import Path
-from typing import Any, Dict, Set
+from typing import Any
 
 
 class ContextDetector:
     """Detects blockchain development environments (Foundry, Hardhat) in the CWD."""
 
     @staticmethod
-    def get_foundry_rpc_endpoints() -> Dict[str, str]:
+    def get_foundry_rpc_endpoints() -> dict[str, str]:
         """Parse foundry.toml and return rpc_endpoints if found."""
         path = Path("./foundry.toml")
         if not path.exists():
@@ -25,16 +25,16 @@ class ContextDetector:
             return {}
 
     @staticmethod
-    def get_context_chain_names() -> Set[str]:
+    def get_context_chain_names() -> set[str]:
         """Get names of chains mentioned in local tool configs."""
         names = set(ContextDetector.get_foundry_rpc_endpoints().keys())
         names.update(ContextDetector.get_hardhat_networks())
         return names
 
     @staticmethod
-    def get_hardhat_networks() -> Set[str]:
+    def get_hardhat_networks() -> set[str]:
         """Heuristic detection of network names in hardhat config."""
-        networks: Set[str] = set()
+        networks: set[str] = set()
         for ext in ["js", "ts"]:
             path = Path(f"./hardhat.config.{ext}")
             if path.exists():
@@ -67,7 +67,7 @@ class ContextDetector:
         return networks
 
     @staticmethod
-    def get_context_data() -> Dict[str, Any]:
+    def get_context_data() -> dict[str, Any]:
         """Returns combined data from all detected tool configs."""
         return {
             "foundry": ContextDetector.get_foundry_rpc_endpoints(),

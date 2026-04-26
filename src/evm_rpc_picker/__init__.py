@@ -1,8 +1,7 @@
-from typing import Optional
 from .tui import ChainRPCPicker
 
 
-def pick_rpc() -> Optional[str]:
+def pick_rpc() -> str | None:
     """
     Run the EVM RPC Picker TUI and return the selected RPC URL.
     Returns None if the user cancels.

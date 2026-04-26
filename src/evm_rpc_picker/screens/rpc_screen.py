@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Any, Dict, List, Optional, cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from ..tui import ChainRPCPicker
@@ -118,12 +118,12 @@ class RPCScreen(ModalScreen[str]):
         ("enter", "submit", "Select"),
     ]
 
-    def __init__(self, chain: Dict[str, Any]):
+    def __init__(self, chain: dict[str, Any]):
         super().__init__()
         self.chain = chain
-        self.rpc_data: List[Dict[str, Any]] = self._gather_rpcs()
+        self.rpc_data: list[dict[str, Any]] = self._gather_rpcs()
 
-    def _gather_rpcs(self) -> List[Dict[str, Any]]:
+    def _gather_rpcs(self) -> list[dict[str, Any]]:
         rpcs = []
         cm = self.app.config
 
@@ -217,7 +217,8 @@ class RPCScreen(ModalScreen[str]):
         with Container(id="rpc-container"):
             with Horizontal(id="rpc-header"):
                 yield Label(
-                    f"[bold #89b4fa]{name}[/bold #89b4fa] (ID: {cid}, Short: {short}, Currency: {native})",
+                    f"[bold #89b4fa]{name}[/bold #89b4fa] (ID: {cid}, "
+                    f"Short: {short}, Currency: {native})",
                     id="header-left",
                 )
                 info_url = self.chain.get("infoURL", "")
@@ -249,7 +250,7 @@ class RPCScreen(ModalScreen[str]):
         # Run latency checks in background
         self.run_worker(self.check_latencies(items))
 
-    async def check_latencies(self, items: List[RPCListItem]) -> None:
+    async def check_latencies(self, items: list[RPCListItem]) -> None:
         async with httpx.AsyncClient(timeout=2.5) as client:
             tasks = [self.ping_rpc(client, item) for item in items]
             await asyncio.gather(*tasks)
@@ -274,9 +275,7 @@ class RPCScreen(ModalScreen[str]):
                 }
             )
 
-        sorted_data = sorted(
-            items_data, key=lambda x: (x["latency"] is None, x["latency"] or 9999)
-        )
+        sorted_data = sorted(items_data, key=lambda x: (x["latency"] is None, x["latency"] or 9999))
 
         rpc_list.clear()
         for d in sorted_data:
@@ -288,13 +287,13 @@ class RPCScreen(ModalScreen[str]):
             )
             new_item.actual_url = str(d["actual_url"])
             new_item.needs_password = bool(d["needs_password"])
-            new_item.rpc_id = cast(Optional[str], d["rpc_id"])
+            new_item.rpc_id = cast(str | None, d["rpc_id"])
             new_item.note = str(d.get("note", ""))
             new_item.encrypted = bool(d.get("encrypted", False))
             new_item.has_secrets = bool(d.get("is_secret", False))
 
             rpc_list.append(new_item)
-            new_item.update_latency(cast(Optional[float], d["latency"]))
+            new_item.update_latency(cast(float | None, d["latency"]))
 
         if rpc_list.children:
             rpc_list.index = 0
@@ -338,9 +337,7 @@ class RPCScreen(ModalScreen[str]):
     def action_add_rpc(self) -> None:
         """Open the modal to add a custom RPC."""
         self.app.push_screen(
-            AddRPCModal(
-                self.chain.get("name", "Unknown"), self.chain.get("chainId", 0)
-            ),
+            AddRPCModal(self.chain.get("name", "Unknown"), self.chain.get("chainId", 0)),
             self._on_rpc_added,
         )
 
@@ -348,7 +345,7 @@ class RPCScreen(ModalScreen[str]):
         """Open the modal with current clipboard (planned)."""
         self.action_add_rpc()
 
-    def _on_rpc_added(self, data: Optional[dict]) -> None:
+    def _on_rpc_added(self, data: dict | None) -> None:
         if not data:
             return
 
@@ -377,7 +374,7 @@ class RPCScreen(ModalScreen[str]):
             return
 
         # Prepare initial data
-        initial_data: Dict[str, Any] = {
+        initial_data: dict[str, Any] = {
             "url": item.url,
             "note": item.note,
             "encrypted": item.encrypted,
@@ -397,7 +394,7 @@ class RPCScreen(ModalScreen[str]):
             self._open_edit_modal(item, initial_data)
 
     def _on_password_for_edit(
-        self, item: RPCListItem, initial_data: Dict[str, Any], password: Optional[str]
+        self, item: RPCListItem, initial_data: dict[str, Any], password: str | None
     ) -> None:
         if item.encrypted and not password:
             return
@@ -416,7 +413,7 @@ class RPCScreen(ModalScreen[str]):
         elif secrets["status"] == "wrong_password":
             self.app.notify("Wrong password", severity="error")
 
-    def _open_edit_modal(self, item: RPCListItem, initial_data: Dict[str, Any]) -> None:
+    def _open_edit_modal(self, item: RPCListItem, initial_data: dict[str, Any]) -> None:
         self.app.push_screen(
             AddRPCModal(
                 self.chain.get("name", "Unknown"),
@@ -426,9 +423,7 @@ class RPCScreen(ModalScreen[str]):
             lambda d: self._handle_edit_result(item, d),
         )
 
-    def _handle_edit_result(
-        self, item: RPCListItem, data: Optional[Dict[str, Any]]
-    ) -> None:
+    def _handle_edit_result(self, item: RPCListItem, data: dict[str, Any] | None) -> None:
         if not data:
             return
 
@@ -453,14 +448,12 @@ class RPCScreen(ModalScreen[str]):
             if not isinstance(item, RPCListItem):
                 return
             if item.needs_password:
-                self.app.push_screen(
-                    PasswordModal(), lambda p: self._on_password_provided(item, p)
-                )
+                self.app.push_screen(PasswordModal(), lambda p: self._on_password_provided(item, p))
             else:
                 url = item.actual_url
                 self.dismiss(url)
 
-    def _on_password_provided(self, item: RPCListItem, password: Optional[str]) -> None:
+    def _on_password_provided(self, item: RPCListItem, password: str | None) -> None:
         if not password:
             return
 

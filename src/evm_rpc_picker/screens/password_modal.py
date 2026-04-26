@@ -1,6 +1,6 @@
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Vertical, Horizontal
+from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label
 
@@ -61,9 +61,7 @@ class PasswordModal(ModalScreen[str]):
             yield Label("🔐 Encrypted RPC", classes="modal-title")
             yield Label("This RPC requires a password to unlock secrets.")
             yield Label("Password", classes="field-label")
-            yield Input(
-                placeholder="Enter password...", password=True, id="password-input"
-            )
+            yield Input(placeholder="Enter password...", password=True, id="password-input")
 
             with Horizontal(classes="modal-buttons"):
                 yield Button("Cancel", id="cancel", variant="error")
