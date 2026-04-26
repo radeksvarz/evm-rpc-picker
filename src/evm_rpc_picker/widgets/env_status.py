@@ -11,9 +11,11 @@ class EnvStatus(Horizontal):
     DEFAULT_CSS = """
     EnvStatus {
         background: #181825;
-        height: 1;
+        height: 3;
         width: 100%;
         padding: 0 2;
+        border-top: solid #313244;
+        content-align: left middle;
     }
 
     #env-status-label {

@@ -186,6 +186,25 @@ async def test_env_status_widget_latency():
                 assert "https://mock-rpc.com" in status_text
 
 @pytest.mark.asyncio
+async def test_env_status_widget_enter_select():
+    # Mock ETH_RPC_URL
+    rpc_url = "https://current-rpc.com"
+    with patch.dict(os.environ, {"ETH_RPC_URL": rpc_url}):
+        app = ChainRPCPicker()
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            # Tab to the widget
+            await pilot.press("tab", "tab")
+            assert app.focused.id == "env-status-widget"
+            
+            # Press Enter
+            await pilot.press("enter")
+            await pilot.pause()
+            
+            # App should return the URL
+            assert app.return_value == rpc_url
+
+@pytest.mark.asyncio
 async def test_quit_on_esc():
     app = ChainRPCPicker()
     async with app.run_test() as pilot:

@@ -85,7 +85,6 @@ class MainScreen(Screen[str]):
         self.chains: List[Dict[str, Any]] = []
         self.filtered_chains: List[Dict[str, Any]] = []
         self.filter_mode: str = "all"  # all, mainnet, testnet
-        self.current_env_rpc: Optional[str] = None
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -212,8 +211,9 @@ class MainScreen(Screen[str]):
                 return
 
         if event.key == "enter" and self.focused and self.focused.id == "env-status-widget":
-            if self.current_env_rpc:
-                self.app.exit(self.current_env_rpc)
+            env_status = self.query_one(EnvStatus)
+            if env_status.current_rpc:
+                self.app.exit(env_status.current_rpc)
             event.stop()
             return
 
