@@ -1,6 +1,6 @@
 # EVM RPC Picker
 
-A modern TUI (Terminal User Interface) tool to search for EVM chains and select an RPC URL. It helps you quickly set your `ETH_RPC_URL` environment variable with the fastest available public RPC.
+A TUI (Terminal User Interface) tool to search for EVM chains and select an RPC URL. It helps you quickly set the RPC environment variable for your favourite chain with the fastest available public RPC.
 
 ## Features
 - **Search**: Instantly filter over 1000+ chains by name or Chain ID.
@@ -20,16 +20,19 @@ uvx evm-rpc-picker
 
 ## Shell Integration
 
-Add the following line to your `.bashrc` or `.zshrc`:
+Add the following function to your `.bashrc` or `.zshrc`:
 
 ```bash
-eval "$(uvx evm-rpc-picker --init)"
+set-rpc() {
+    local rpc=$(uvx evm-rpc-picker)
+    [ -n "$rpc" ] && export ETH_RPC_URL="$rpc"
+}
 ```
 
-After restarting your shell or sourcing the config, use the `rpc-set` command:
+After restarting your shell or sourcing the config, use the `set-rpc` command:
 
 ```bash
-rpc-set
+set-rpc
 ```
 
 ## Keyboard Shortcuts
@@ -52,7 +55,7 @@ The tool fetches data from `https://chainlist.org/rpcs.json` and caches it local
 
 ## Development
 ```bash
-git clone https://github.com/radek/evm-rpc-picker.git
+git clone https://github.com/radeksvarz/evm-rpc-picker.git
 cd evm-rpc-picker
 uv sync
 uv run evm-rpc-picker
