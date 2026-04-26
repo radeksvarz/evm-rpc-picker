@@ -97,3 +97,8 @@ cd evm-rpc-picker
 uv sync
 uv run evm-rpc-picker
 ```
+
+---
+
+Created with 🍻 by **BeerFi Prague** web3 builders community | [Source and updates](https://github.com/radeksvarz/evm-rpc-picker)
+

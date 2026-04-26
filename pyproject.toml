@@ -1,8 +1,8 @@
 [project]
 name = "evm-rpc-picker"
 version = "0.1.0"
-description = "A TUI tool to search for EVM chains and select an RPC URL."
-authors = [{ name = "Radek", email = "radek@example.com" }]
+description = "A TUI tool to search for EVM chains, manage favorites securely, and select RPC URLs."
+authors = [{ name = "Radek Svarz", email = "evm-rpc-picker.pypi@svarz.cz" }]
 dependencies = [
     "textual>=0.86.0",
     "httpx>=0.27.0",
@@ -14,6 +14,25 @@ dependencies = [
 requires-python = ">=3.12"
 readme = "README.md"
 license = { text = "MIT" }
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Networking",
+    "Topic :: Utilities",
+]
+keywords = ["web3", "ethereum", "blockchain", "evm", "rpc", "tui", "foundry", "hardhat"]
 
 [project.urls]
 Homepage = "https://github.com/radeksvarz/evm-rpc-picker"
