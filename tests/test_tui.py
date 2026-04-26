@@ -5,6 +5,7 @@ from unittest.mock import patch, MagicMock
 from evm_rpc_picker.tui import ChainRPCPicker
 from evm_rpc_picker.widgets.search_input import SearchInput
 from evm_rpc_picker.widgets.chains_table import ChainsTable
+from evm_rpc_picker.widgets.env_status import EnvStatus
 from evm_rpc_picker.screens.main_screen import MainScreen
 from evm_rpc_picker.screens.rpc_screen import RPCScreen
 
@@ -55,7 +56,7 @@ async def test_app_focus_cycling():
         
         # Press Tab to move to env status
         await pilot.press("tab")
-        assert app.focused.id == "env-status"
+        assert app.focused.id == "env-status-widget"
         
         # Press Tab to wrap back to SearchInput
         await pilot.press("tab")
@@ -161,6 +162,28 @@ async def test_rpc_selection_and_exit():
             # The app should have exited with one of the URLs
             # Since we didn't actually ping, sorting might be stable or random-ish but items are there
             assert app.return_value in ["https://eth-mainnet.public.blastapi.io", "https://rpc.ankr.com/eth"]
+
+@pytest.mark.asyncio
+async def test_env_status_widget_latency():
+    # Mock ETH_RPC_URL and the network response
+    with patch.dict(os.environ, {"ETH_RPC_URL": "https://mock-rpc.com"}):
+        with patch("httpx.AsyncClient.post") as mock_post:
+            # Mock a successful RPC response
+            mock_post.return_value = MagicMock(status_code=200)
+            
+            app = ChainRPCPicker()
+            async with app.run_test() as pilot:
+                await pilot.pause()
+                # Give the worker a moment to finish
+                import asyncio
+                await asyncio.sleep(0.1)
+                
+                env_status = app.screen.query_one(EnvStatus)
+                # Access .content for assertion (confirmed via debug)
+                latency_text = str(env_status.latency_label.content)
+                status_text = str(env_status.status_label.content)
+                assert "ms" in latency_text
+                assert "https://mock-rpc.com" in status_text
 
 @pytest.mark.asyncio
 async def test_quit_on_esc():

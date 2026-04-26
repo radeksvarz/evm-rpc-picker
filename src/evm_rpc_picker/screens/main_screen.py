@@ -7,7 +7,7 @@ from textual.screen import Screen
 from textual.widgets import DataTable, Footer, Header, Input, Label
 
 from ..models import fetch_chains, get_cached_chains
-from ..widgets import ChainsTable, SearchInput
+from ..widgets import ChainsTable, EnvStatus, SearchInput
 from .rpc_screen import RPCScreen
 
 
@@ -69,31 +69,6 @@ class MainScreen(Screen[str]):
         color: #f5e0dc;
         text-style: bold;
     }
-
-    #env-status-container {
-        background: #181825;
-        height: 1;
-        width: 100%;
-        padding: 0 2;
-    }
-
-    #env-status {
-        color: #9399b2;
-        width: 1fr;
-        height: 1;
-        text-style: italic;
-    }
-
-    #env-latency {
-        width: 10;
-        text-align: right;
-    }
-
-    #env-status:focus {
-        background: #313244;
-        color: #f5c2e7;
-        text-style: bold italic;
-    }
     """
 
     BINDINGS = [
@@ -121,22 +96,10 @@ class MainScreen(Screen[str]):
             table = ChainsTable(id="chain-table")
             table.can_focus = True
             yield table
-        with Horizontal(id="env-status-container"):
-            env_label = Label(id="env-status")
-            env_label.can_focus = True
-            yield env_label
-            yield Label("--- ms", id="env-latency")
+        yield EnvStatus(id="env-status-widget")
         yield Footer()
 
     async def on_mount(self) -> None:
-        import os
-        self.current_env_rpc = os.environ.get("ETH_RPC_URL")
-        display_rpc = self.current_env_rpc or "not set"
-        self.query_one("#env-status", Label).update(f" Current ETH_RPC_URL: [bold #89b4fa]{display_rpc}[/bold #89b4fa]")
-        
-        if self.current_env_rpc:
-            self.run_worker(self.check_system_latency())
-            
         table = self.query_one(ChainsTable)
         table.add_columns("Chain Name", "ID", "Short", "Currency")
         table.cursor_type = "row"
@@ -248,7 +211,7 @@ class MainScreen(Screen[str]):
                 event.stop()
                 return
 
-        if event.key == "enter" and self.focused and self.focused.id == "env-status":
+        if event.key == "enter" and self.focused and self.focused.id == "env-status-widget":
             if self.current_env_rpc:
                 self.app.exit(self.current_env_rpc)
             event.stop()
@@ -267,22 +230,6 @@ class MainScreen(Screen[str]):
                     table.action_page_down()
                 event.stop()
 
-    async def check_system_latency(self) -> None:
-        import httpx
-        import time
-        start = time.time()
-        try:
-            async with httpx.AsyncClient(timeout=2.5) as client:
-                payload = {"jsonrpc": "2.0", "method": "eth_blockNumber", "params": [], "id": 1}
-                response = await client.post(self.current_env_rpc, json=payload)
-                if response.status_code == 200:
-                    latency = (time.time() - start) * 1000
-                    color = "#00ff00" if latency < 200 else "#ffff00" if latency < 500 else "#ff0000"
-                    self.query_one("#env-latency", Label).update(f"[{color}]{latency:.0f} ms[/{color}]")
-                else:
-                    self.query_one("#env-latency", Label).update("[red]ERR[/red]")
-        except Exception:
-            self.query_one("#env-latency", Label).update("[red]ERR[/red]")
 
     def on_rpc_selected(self, rpc_url: str) -> None:
         if rpc_url:
