@@ -1,7 +1,0 @@
-# EVM RPC Picker - Local Project Configuration
-# This file stores favorites and custom RPCs.
-
-favorites = [100, 10200] # List of Chain IDs for pinned networks
-
-[custom_rpcs] # Custom RPC endpoints
-1 = [{id = "rpc_1_1777231414",url = "kljhkjhlkjhlkj",note = "kjhkjhjkkh",encrypted = true,has_secrets = true}]

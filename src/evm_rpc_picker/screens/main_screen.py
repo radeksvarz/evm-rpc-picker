@@ -220,7 +220,7 @@ class MainScreen(Screen[str]):
             is_global = cid in fav_global
 
             if is_local:
-                indicator = "* [P]"
+                indicator = "* [L]"
             elif is_global:
                 indicator = "*"
 
