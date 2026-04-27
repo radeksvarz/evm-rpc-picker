@@ -18,7 +18,6 @@ class EnvStatus(Horizontal):
     BINDINGS = [
         Binding("enter", "submit", "Select", tooltip="Use current ETH_RPC_URL"),
         Binding("escape", "app.quit", "Cancel"),
-        Binding("tab", "screen.focus_next", "Switch", show=False),
     ]
 
     def action_submit(self) -> None:

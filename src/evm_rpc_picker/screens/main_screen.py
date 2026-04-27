@@ -93,7 +93,6 @@ class MainScreen(Screen[str]):
         Binding("ctrl+t", "toggle_filter_type", "Type", tooltip="Toggle between All, Testnets and Mainnets"),
         Binding("ctrl+k", "init_project", "Init Project", tooltip="Initialize local configuration in current directory"),
         Binding("ctrl+r", "refresh_data", "Refresh Data from chainlist.org", show=False),
-        Binding("tab", "focus_next", "Switch", show=False, priority=True),
     ]
 
     def __init__(self) -> None:
