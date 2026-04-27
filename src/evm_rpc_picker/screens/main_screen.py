@@ -89,6 +89,7 @@ class MainScreen(Screen[str]):
 
     BINDINGS = [
         ("enter", "submit", "Select"),
+        ("escape", "app.quit", "Cancel"),
         ("/", "focus_search", "Search"),
         ("ctrl+f", "toggle_filter_favs", "Filter Favs"),
         ("ctrl+t", "toggle_filter_type", "Filter Type"),
@@ -97,7 +98,6 @@ class MainScreen(Screen[str]):
         Binding("ctrl+r", "refresh_data", "Refresh Data from chainlist.org", show=False),
         ("c", "init_project", "Init"),
         Binding("tab", "focus_next", "Switch", show=False),
-        ("escape", "app.quit", "Exit"),
     ]
 
     def __init__(self) -> None:
