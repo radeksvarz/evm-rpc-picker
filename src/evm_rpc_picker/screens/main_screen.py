@@ -88,15 +88,14 @@ class MainScreen(Screen[str]):
     """
 
     BINDINGS = [
-        ("enter", "submit", "Select"),
-        ("escape", "app.quit", "Cancel"),
-        ("/", "focus_search", "Search"),
-        ("ctrl+f", "toggle_filter_favs", "Filter Favs"),
-        ("ctrl+t", "toggle_filter_type", "Filter Type"),
-        ("ctrl+space", "toggle_favorite", "Fav (P)"),
-        ("ctrl+shift+space", "toggle_global_favorite", "Fav (G)"),
+        Binding("enter", "submit", "Select", tooltip="Select the highlighted chain"),
+        Binding("escape", "app.quit", "Cancel", tooltip="Quit the application"),
+        Binding("ctrl+f", "toggle_filter_favs", "Favorites", tooltip="Toggle showing only your favorite chains"),
+        Binding("ctrl+t", "toggle_filter_type", "Type", tooltip="Toggle between All, Testnets and Mainnets"),
+        Binding("ctrl+space", "toggle_favorite", "Fav (PROJ)", tooltip="Add/remove from local project favorites"),
+        Binding("ctrl+shift+space", "toggle_global_favorite", "Fav (GLOB)", tooltip="Add/remove from global favorites"),
         Binding("ctrl+r", "refresh_data", "Refresh Data from chainlist.org", show=False),
-        ("c", "init_project", "Init"),
+        Binding("ctrl+p", "init_project", "Init Project", tooltip="Initialize local configuration in current directory"),
         Binding("tab", "focus_next", "Switch", show=False),
     ]
 
@@ -104,7 +103,7 @@ class MainScreen(Screen[str]):
         super().__init__()
         self.chains: list[dict[str, Any]] = []
         self.filtered_chains: list[dict[str, Any]] = []
-        self.filter_type: str = "all"  # all, mainnet, testnet
+        self.filter_type: str = "all"  # all, testnet, mainnet
         self.filter_favorites_only: bool = False
 
     def compose(self) -> ComposeResult:
@@ -135,8 +134,6 @@ class MainScreen(Screen[str]):
         type_str = self.filter_type.upper()
         status_label.update(f"Filter: {star}{type_str}")
 
-    def action_focus_search(self) -> None:
-        self.query_one("#search-input").focus()
 
     def action_toggle_filter_favs(self) -> None:
         self.filter_favorites_only = not self.filter_favorites_only
@@ -317,15 +314,20 @@ class MainScreen(Screen[str]):
             self.app.exit(rpc_url)
 
     def on_key(self, event: events.Key) -> None:
-        """Handle alpha-numeric keys to focus and type into search."""
-        if event.is_printable and len(event.key) == 1:
-            search_input = self.query_one(SearchInput)
-            if not search_input.has_focus:
-                search_input.focus()
-                search_input.value += event.key
-                # Textual handles the cursor position usually,
-                # but we might need to prevent double character if we are not careful.
-                # Actually, if we focus it here, the event might bubble up or be handled by search.
+        """Handle key events for type-to-search."""
+        search_input = self.query_one(SearchInput)
+
+        if event.key == "backspace":
+            if search_input.value:
+                search_input.value = search_input.value[:-1]
+                event.stop()
+        elif event.is_printable and event.character:
+            search_input.value += event.character
+            event.stop()
+        elif event.key == "escape":
+            # Clear search on escape if not empty
+            if search_input.value:
+                search_input.value = ""
                 event.stop()
 
     def _on_init_confirm(self, confirmed: bool | None) -> None:
