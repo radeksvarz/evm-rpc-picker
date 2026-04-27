@@ -73,3 +73,13 @@ class ContextDetector:
             "foundry": ContextDetector.get_foundry_rpc_endpoints(),
             "hardhat_networks": list(ContextDetector.get_hardhat_networks()),
         }
+
+    @staticmethod
+    def has_foundry() -> bool:
+        """Check if foundry.toml exists."""
+        return Path("./foundry.toml").exists()
+
+    @staticmethod
+    def has_hardhat() -> bool:
+        """Check if hardhat config exists."""
+        return any(Path(f"./hardhat.config.{ext}").exists() for ext in ["js", "ts"])

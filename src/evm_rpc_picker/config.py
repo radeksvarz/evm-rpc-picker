@@ -43,22 +43,24 @@ class ConfigManager:
         return favorites
 
     def toggle_favorite(self, chain_id: int, is_global: bool = False) -> None:
-        """Toggle a favorite chain ID in the specified config."""
+        """Toggle a favorite chain ID in the specified config. Auto-creates file if missing."""
         config = self.global_config if is_global else self.local_config
+        path = self.GLOBAL_CONFIG_FILE if is_global else self.LOCAL_CONFIG_FILE
 
-        # If toggling local and it doesn't exist, this might be handled by UI prompt
-        # but here we just ensure the list exists.
-        favorites = config.get("favorites", [])
+        favorites = list(config.get("favorites", []))
         if chain_id in favorites:
             favorites.remove(chain_id)
         else:
             favorites.append(chain_id)
 
         config["favorites"] = favorites
+        self._save_toml(path, config, is_global=is_global)
+
+        # Update internal state
         if is_global:
-            self._save_toml(self.GLOBAL_CONFIG_FILE, config, is_global=True)
+            self.global_config = config
         else:
-            self._save_toml(self.LOCAL_CONFIG_FILE, config, is_global=False)
+            self.local_config = config
 
     # --- Secrets ---
 
@@ -284,6 +286,10 @@ class ConfigManager:
     def local_config_exists(self) -> bool:
         """Check if local config file exists in CWD."""
         return self.LOCAL_CONFIG_FILE.exists()
+
+    def global_config_exists(self) -> bool:
+        """Check if global config file exists."""
+        return self.GLOBAL_CONFIG_FILE.exists()
 
     def init_local_config(self) -> None:
         """Create an empty local config file."""

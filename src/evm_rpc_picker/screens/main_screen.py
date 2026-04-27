@@ -13,8 +13,7 @@ from textual.widgets import DataTable, Footer, Header, Input, Label
 
 from ..context import ContextDetector
 from ..models import fetch_chains, get_cached_chains
-from ..widgets import ChainsTable, CustomHeader, EnvStatus, SearchInput
-from .confirm_modal import ConfirmModal
+from ..widgets import ChainsTable, ContextBar, CustomHeader, EnvStatus, SearchInput
 from .rpc_screen import RPCScreen
 
 
@@ -91,7 +90,6 @@ class MainScreen(Screen[str]):
         Binding("escape", "app.quit", "Cancel", tooltip="Quit the application"),
         Binding("ctrl+f", "toggle_filter_favs", "Favorites", tooltip="Toggle showing only your favorite chains"),
         Binding("ctrl+t", "toggle_filter_type", "Type", tooltip="Toggle between All, Testnets and Mainnets"),
-        Binding("ctrl+k", "init_project", "Init Project", tooltip="Initialize local configuration in current directory"),
         Binding("ctrl+r", "refresh_data", "Refresh Data from chainlist.org", show=False),
     ]
 
@@ -113,6 +111,7 @@ class MainScreen(Screen[str]):
             table = ChainsTable(id="chain-table")
             table.can_focus = True
             yield table
+            yield ContextBar(id="context-bar-widget")
         yield EnvStatus(id="env-status-widget")
         yield Footer()
 
@@ -148,13 +147,6 @@ class MainScreen(Screen[str]):
             if chain_id is None:
                 return
 
-            if not self.app.config.local_config_exists():
-                self.app.push_screen(
-                    ConfirmModal("Local config not found. Create .rpc-picker.toml?"),
-                    self._on_init_confirm,
-                )
-                return
-
             self.app.config.toggle_favorite(int(chain_id), is_global=False)
             self.refresh_table()
 
@@ -167,16 +159,9 @@ class MainScreen(Screen[str]):
                 self.app.config.toggle_favorite(int(chain_id), is_global=True)
                 self.refresh_table()
 
-    def action_init_project(self) -> None:
-        if self.app.config.local_config_exists():
-            self.app.notify("Local config already exists.", severity="information")
-        else:
-            self.app.config.init_local_config()
-            self.app.notify("Created .rpc-picker.toml", title="Project Initialized")
-            self.refresh_table()
-
     def refresh_table(self) -> None:
         """Trigger search update to refresh table contents and indicators."""
+        self.query_one(ContextBar).update_status()
         self.apply_filter()
 
     async def action_refresh_data(self) -> None:
@@ -324,8 +309,3 @@ class MainScreen(Screen[str]):
                 self.apply_filter()
                 event.stop()
 
-    def _on_init_confirm(self, confirmed: bool | None) -> None:
-        if confirmed:
-            self.app.config.init_local_config()
-            self.app.notify("Created .rpc-picker.toml")
-            self.refresh_table()
