@@ -99,13 +99,18 @@ async def test_filter_toggle():
         assert main_screen.filter_type == "all"
         await pilot.press("ctrl+t")
         await pilot.pause(0.2)
+        assert main_screen.filter_type == "testnet"
+        assert table.row_count == 1
+
+        await pilot.press("ctrl+t")
+        await pilot.pause(0.2)
         assert main_screen.filter_type == "mainnet"
         assert table.row_count == 1
 
         await pilot.press("ctrl+t")
         await pilot.pause(0.2)
-        assert main_screen.filter_type == "testnet"
-        assert table.row_count == 1
+        assert main_screen.filter_type == "all"
+        assert table.row_count == 2
 
 
 @pytest.mark.asyncio

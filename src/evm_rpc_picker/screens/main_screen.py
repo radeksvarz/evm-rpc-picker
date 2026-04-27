@@ -136,7 +136,7 @@ class MainScreen(Screen[str]):
         self.apply_filter()
 
     def action_toggle_filter_type(self) -> None:
-        modes = ["all", "mainnet", "testnet"]
+        modes = ["all", "testnet", "mainnet"]
         current_idx = modes.index(self.filter_type)
         self.filter_type = modes[(current_idx + 1) % len(modes)]
         self.apply_filter()
