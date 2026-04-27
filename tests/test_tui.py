@@ -245,33 +245,35 @@ async def test_esc_clears_search_then_quits():
     async with app.run_test() as pilot:
         await pilot.pause(0.5)
         search_input = app.screen.query_one("#search-input")
-        
+
         # 1. Type something
         await pilot.press("a")
         assert search_input.value == "a"
-        
+
         # 2. First ESC clears search
         await pilot.press("escape")
         assert search_input.value == ""
-        
+
         # 3. Second ESC quits
         with patch.object(app, "exit") as mock_exit:
             await pilot.press("escape")
             await pilot.pause(0.2)
             mock_exit.assert_called_once()
+
+
 @pytest.mark.asyncio
 async def test_backspace_clears_search():
     app = ChainRPCPicker()
     async with app.run_test() as pilot:
         await pilot.pause(0.5)
         search_input = app.screen.query_one("#search-input")
-        
+
         await pilot.press("a")
         await pilot.press("b")
         assert search_input.value == "ab"
-        
+
         await pilot.press("backspace")
         assert search_input.value == "a"
-        
+
         await pilot.press("backspace")
         assert search_input.value == ""

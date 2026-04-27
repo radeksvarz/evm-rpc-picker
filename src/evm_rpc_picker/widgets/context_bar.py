@@ -1,9 +1,13 @@
 """Widget to display the active configuration context."""
 
+from typing import TYPE_CHECKING, cast
+
 from textual.app import ComposeResult
-from textual.widgets import Static, Label
 from textual.containers import Horizontal
+from textual.widgets import Label, Static
+
 from ..context import ContextDetector
+
 
 class ContextBar(Horizontal):
     """Bar displaying the active configuration context (Global, Local, Foundry, Hardhat)."""
@@ -51,13 +55,13 @@ class ContextBar(Horizontal):
     def compose(self) -> ComposeResult:
         yield Static(id="context-spacer")
         yield Label("Context:", id="context-title", classes="context-label")
-        
+
         # We will update these in on_mount
         self.gbl = Label("○ GLOBAL", classes="context-indicator status-off")
         self.loc = Label("○ LOCAL", classes="context-indicator status-off")
         self.fdy = Label("○ FOUNDRY", classes="context-indicator status-off")
         self.hdh = Label("○ HARDHAT", classes="context-indicator status-off")
-        
+
         yield self.gbl
         yield self.loc
         yield self.fdy
@@ -68,8 +72,12 @@ class ContextBar(Horizontal):
 
     def update_status(self) -> None:
         """Update the indicators based on detected context."""
-        cfg = self.app.config
-        
+        if TYPE_CHECKING:
+            from evm_rpc_picker.app import EVMRPCApp
+
+        app = cast("EVMRPCApp", self.app)
+        cfg = app.config
+
         # Global
         if cfg.global_config_exists():
             self.gbl.update("● GLOBAL")

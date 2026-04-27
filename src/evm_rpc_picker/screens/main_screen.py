@@ -1,25 +1,20 @@
-from typing import TYPE_CHECKING, Any, AsyncIterator
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ..tui import ChainRPCPicker
 
 from textual import events, on
-from ..commands import RefreshDataProvider
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal
 from textual.screen import Screen
-from textual.widgets import DataTable, Footer, Header, Input, Label
+from textual.widgets import DataTable, Footer, Label
 
+from ..commands import RefreshDataProvider
 from ..context import ContextDetector
 from ..models import fetch_chains, get_cached_chains
 from ..widgets import ChainsTable, ContextBar, CustomHeader, EnvStatus, SearchInput
 from .rpc_screen import RPCScreen
-
-
-
-
-
 
 
 class MainScreen(Screen[str]):
@@ -128,7 +123,6 @@ class MainScreen(Screen[str]):
         type_str = self.filter_type.upper()
         status_label.update(f"Filter: {star}{type_str}")
 
-
     def action_toggle_filter_favs(self) -> None:
         self.filter_favorites_only = not self.filter_favorites_only
         self.apply_filter()
@@ -192,19 +186,13 @@ class MainScreen(Screen[str]):
         fav_local = self.app.config.get_favorites(project_only=True)
 
         # Get chains from local tools separately
-        foundry_names = set(ContextDetector.get_foundry_rpc_endpoints().keys())
+        foundry_endpoints = ContextDetector.get_foundry_rpc_endpoints()
         hardhat_names = ContextDetector.get_hardhat_networks()
 
-        def get_ids_by_names(names: set[str]) -> set[int]:
-            return {
-                c["chainId"]
-                for c in chains
-                if c["name"].lower() in [n.lower() for n in names]
-                or c.get("shortName", "").lower() in [n.lower() for n in names]
-            }
-
-        foundry_ids = get_ids_by_names(foundry_names)
-        hardhat_ids = get_ids_by_names(hardhat_names)
+        foundry_ids = ContextDetector.match_names_to_ids(foundry_endpoints, self.chains)
+        # For hardhat, we only have names, so we pass empty URL strings
+        hardhat_data = dict.fromkeys(hardhat_names, "")
+        hardhat_ids = ContextDetector.match_names_to_ids(hardhat_data, self.chains)
 
         # Sort: Local Fav > Global Fav > Foundry/Hardhat > Others
         def sort_key(c: dict[str, Any]) -> int:
@@ -222,18 +210,18 @@ class MainScreen(Screen[str]):
 
         for i, chain in enumerate(sorted_chains):
             cid = chain.get("chainId")
-            
+
             is_g = cid in fav_global
-            is_l = cid in fav_local
+            is_local_f = cid in fav_local
             is_f = cid in foundry_ids
             is_h = cid in hardhat_ids
 
-            if any([is_g, is_l, is_f, is_h]):
-                g = "[#89b4fa]G[/]" if is_g else " "
-                l = "[#89b4fa]L[/]" if is_l else " "
-                f = "[#89b4fa]F[/]" if is_f else " "
-                h = "[#89b4fa]H[/]" if is_h else " "
-                indicator = f"[{g}{l}{f}{h}]"
+            if any([is_g, is_local_f, is_f, is_h]):
+                g_str = "[#89b4fa]G[/]" if is_g else " "
+                l_str = "[#89b4fa]L[/]" if is_local_f else " "
+                f_str = "[#89b4fa]F[/]" if is_f else " "
+                h_str = "[#89b4fa]H[/]" if is_h else " "
+                indicator = f"[{g_str}{l_str}{f_str}{h_str}]"
             else:
                 indicator = ""
 
@@ -246,6 +234,7 @@ class MainScreen(Screen[str]):
                 native,
                 key=str(i),
             )
+
     def apply_filter(self) -> None:
         query = self.query_one("#search-input", SearchInput).value.lower()
         filtered = self.chains
@@ -258,15 +247,12 @@ class MainScreen(Screen[str]):
 
         # 2. Apply favorites filter
         if self.filter_favorites_only:
-            fav_all = self.app.config.get_favorites()
-            # Context chains are also treated as favorites in this view
-            context_names = ContextDetector.get_context_chain_names()
-            context_ids = {
-                c["chainId"]
-                for c in self.chains
-                if c["name"].lower() in [n.lower() for n in context_names]
-                or c.get("shortName", "").lower() in [n.lower() for n in context_names]
-            }
+            fav_all = set(self.app.config.get_favorites())
+            # For filtering, we combine both contexts
+            foundry_data = ContextDetector.get_foundry_rpc_endpoints()
+            hardhat_data = dict.fromkeys(ContextDetector.get_hardhat_networks(), "")
+            all_context_data = {**foundry_data, **hardhat_data}
+            context_ids = ContextDetector.match_names_to_ids(all_context_data, self.chains)
             filtered = [
                 c
                 for c in filtered
@@ -276,7 +262,11 @@ class MainScreen(Screen[str]):
         # 3. Apply search query
         if query:
             filtered = [
-                c for c in filtered if query in c["name"].lower() or query in str(c["chainId"])
+                c
+                for c in filtered
+                if query in c.get("name", "").lower()
+                or query in str(c.get("chainId", ""))
+                or query in c.get("shortName", "").lower()
             ]
 
         self.filtered_chains = filtered
@@ -301,7 +291,6 @@ class MainScreen(Screen[str]):
         if rpc_url:
             self.app.exit(rpc_url)
 
-
     def on_key(self, event: events.Key) -> None:
         """Handle key events for type-to-search."""
         search_input = self.query_one(SearchInput)
@@ -321,4 +310,3 @@ class MainScreen(Screen[str]):
                 search_input.value = ""
                 self.apply_filter()
                 event.stop()
-

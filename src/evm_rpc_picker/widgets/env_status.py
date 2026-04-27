@@ -7,8 +7,8 @@ from typing import Any
 import httpx
 from textual import work
 from textual.app import ComposeResult
-from textual.containers import Horizontal
 from textual.binding import Binding
+from textual.containers import Horizontal
 from textual.widgets import Label
 
 

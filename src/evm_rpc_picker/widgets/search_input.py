@@ -1,11 +1,12 @@
 """Custom search input widget that looks like an Input but shows a constant cursor."""
 
-from textual.widgets import Static
 from textual.reactive import reactive
+from textual.widgets import Static
+
 
 class SearchInput(Static):
     """A search box that mimics an Input widget but displays a static cursor."""
-    
+
     value = reactive("")
     placeholder = reactive("Search by name or chain ID...")
 

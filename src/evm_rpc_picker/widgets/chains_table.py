@@ -1,9 +1,10 @@
-from textual.widgets import DataTable
 from textual.binding import Binding
+from textual.widgets import DataTable
+
 
 class ChainsTable(DataTable):
     """Custom table for displaying chains."""
-    
+
     BINDINGS = [
         Binding("home", "cursor_top", "Top", show=False),
         Binding("end", "cursor_bottom", "Bottom", show=False),

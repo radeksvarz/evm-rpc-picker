@@ -1,4 +1,5 @@
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
+
 from textual.command import DiscoveryHit, Hit, Provider
 
 
@@ -14,7 +15,7 @@ class RefreshDataProvider(Provider):
             yield Hit(
                 score,
                 matcher.highlight(name),
-                getattr(self.screen, "action_refresh_data"),
+                getattr(self.screen, "action_refresh_data", lambda: None),
                 help="Fetch the latest chain data from chainlist.org",
             )
 
@@ -22,6 +23,6 @@ class RefreshDataProvider(Provider):
         """Discover the refresh command."""
         yield DiscoveryHit(
             "Refresh Data from chainlist.org",
-            getattr(self.screen, "action_refresh_data"),
+            getattr(self.screen, "action_refresh_data", lambda: None),
             help="Fetch the latest chain data from chainlist.org",
         )
