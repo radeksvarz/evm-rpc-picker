@@ -92,11 +92,9 @@ class MainScreen(Screen[str]):
         Binding("escape", "app.quit", "Cancel", tooltip="Quit the application"),
         Binding("ctrl+f", "toggle_filter_favs", "Favorites", tooltip="Toggle showing only your favorite chains"),
         Binding("ctrl+t", "toggle_filter_type", "Type", tooltip="Toggle between All, Testnets and Mainnets"),
-        Binding("ctrl+space", "toggle_favorite", "Fav (PROJ)", tooltip="Add/remove from local project favorites"),
-        Binding("ctrl+shift+space", "toggle_global_favorite", "Fav (GLOB)", tooltip="Add/remove from global favorites"),
+        Binding("ctrl+k", "init_project", "Init Project", tooltip="Initialize local configuration in current directory"),
         Binding("ctrl+r", "refresh_data", "Refresh Data from chainlist.org", show=False),
-        Binding("ctrl+p", "init_project", "Init Project", tooltip="Initialize local configuration in current directory"),
-        Binding("tab", "focus_next", "Switch", show=False),
+        Binding("tab", "focus_next", "Switch", show=False, priority=True),
     ]
 
     def __init__(self) -> None:

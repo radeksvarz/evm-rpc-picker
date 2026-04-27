@@ -8,11 +8,23 @@ import httpx
 from textual import work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
+from textual.binding import Binding
 from textual.widgets import Label
 
 
 class EnvStatus(Horizontal):
     """Widget showing the current ETH_RPC_URL and its latency."""
+
+    BINDINGS = [
+        Binding("enter", "submit", "Select", tooltip="Use current ETH_RPC_URL"),
+        Binding("escape", "app.quit", "Cancel"),
+        Binding("tab", "screen.focus_next", "Switch", show=False),
+    ]
+
+    def action_submit(self) -> None:
+        """Submit the current RPC URL if it's set."""
+        if self.current_rpc:
+            self.app.exit(self.current_rpc)
 
     DEFAULT_CSS = """
     EnvStatus {
