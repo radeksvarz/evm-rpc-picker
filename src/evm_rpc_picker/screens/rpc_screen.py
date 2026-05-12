@@ -191,6 +191,8 @@ class RPCScreen(Screen[str]):
     async def refresh_rpcs(self) -> None:
         table = self.query_one(DataTable)
         table.clear()
+        table.loading = True
+        self.app.notify("Latency testing RPC endpoints...", title="Testing RPCs")
 
         items_to_ping = []
         for r in self.rpc_data:
@@ -255,6 +257,7 @@ class RPCScreen(Screen[str]):
 
             table.add_row(indicator, url_display, tracking_str, lat_str, key=str(i))
 
+        table.loading = False
         if table.row_count > 0:
             table.focus()
 
