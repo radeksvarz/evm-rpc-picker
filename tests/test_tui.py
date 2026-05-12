@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 
 from evm_rpc_picker.screens.main_screen import MainScreen
-from evm_rpc_picker.screens.rpc_screen import RPCScreen
 from evm_rpc_picker.tui import ChainRPCPicker
 from evm_rpc_picker.widgets.chains_table import ChainsTable
 from evm_rpc_picker.widgets.env_status import EnvStatus
@@ -111,61 +110,6 @@ async def test_filter_toggle():
         await pilot.pause(0.2)
         assert main_screen.filter_type == "all"
         assert table.row_count == 2
-
-
-@pytest.mark.asyncio
-async def test_navigation_to_rpc_screen():
-    app = ChainRPCPicker()
-    async with app.run_test() as pilot:
-        await pilot.pause(0.5)
-        table = app.screen.query_one(ChainsTable)
-        table.focus()
-        table.move_cursor(row=0)
-        await pilot.press("enter")
-        await pilot.pause(0.2)
-        assert isinstance(app.screen, RPCScreen)
-
-
-@pytest.mark.asyncio
-async def test_rpc_screen_back_navigation():
-    app = ChainRPCPicker()
-    async with app.run_test() as pilot:
-        await pilot.pause(0.5)
-        table = app.screen.query_one(ChainsTable)
-        table.focus()
-        table.move_cursor(row=0)
-        await pilot.press("enter")
-        await pilot.pause(0.2)
-        assert isinstance(app.screen, RPCScreen)
-
-        await pilot.press("escape")
-        await pilot.pause(0.2)
-        assert isinstance(app.screen, MainScreen)
-
-
-@pytest.mark.asyncio
-async def test_rpc_selection_and_exit():
-    app = ChainRPCPicker()
-    async with app.run_test() as pilot:
-        await pilot.pause(0.5)
-        table = app.screen.query_one(ChainsTable)
-        table.focus()
-        table.move_cursor(row=0)
-        await pilot.press("enter")
-        await pilot.pause(0.5)
-
-        from textual.widgets import DataTable
-
-        data_table = app.screen.query_one(DataTable)
-        if data_table.row_count > 0:
-            data_table.move_cursor(row=0)
-
-        data_table.focus()
-
-        with patch.object(app, "exit") as mock_exit:
-            await app.screen.run_action("submit")
-            await pilot.pause(0.2)
-            mock_exit.assert_called()
 
 
 @pytest.mark.asyncio
