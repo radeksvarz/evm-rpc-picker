@@ -154,13 +154,13 @@ async def test_rpc_selection_and_exit():
         await pilot.press("enter")
         await pilot.pause(0.5)
 
-        from textual.widgets import ListView
+        from textual.widgets import DataTable
 
-        list_view = app.screen.query_one(ListView)
-        if list_view.index is None and len(list_view) > 0:
-            list_view.index = 0
+        data_table = app.screen.query_one(DataTable)
+        if data_table.row_count > 0:
+            data_table.move_cursor(row=0)
 
-        list_view.focus()
+        data_table.focus()
 
         with patch.object(app, "exit") as mock_exit:
             await app.screen.run_action("submit")
