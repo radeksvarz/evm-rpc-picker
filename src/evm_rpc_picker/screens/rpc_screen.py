@@ -157,7 +157,7 @@ class RPCScreen(Screen[str]):
                         "url": f_url,
                         "display_url": f_url,
                         "tracking": "none",
-                        "source": "project",
+                        "source": "foundry",
                         "is_secret": False,
                         "needs_password": False,
                     }
@@ -185,7 +185,7 @@ class RPCScreen(Screen[str]):
 
     async def on_mount(self) -> None:
         table = self.query_one(DataTable)
-        table.add_columns("URL", "Source", "Privacy", "Latency")
+        table.add_columns("", "URL", "Privacy", "Latency")
         await self.refresh_rpcs()
 
     async def refresh_rpcs(self) -> None:
@@ -220,13 +220,20 @@ class RPCScreen(Screen[str]):
             if d.get("is_secret"):
                 url_display = f"🔒 {url_display}"
 
-            source_map = {
-                "public": "Public",
-                "global": "Global",
-                "local": "Local",
-                "project": "Project",
-            }
-            source_str = source_map.get(d.get("source", ""), str(d.get("source", "")).capitalize())
+            source = d.get("source", "")
+            is_g = source == "global"
+            is_l = source == "local"
+            is_f = source == "foundry"
+            is_h = source == "hardhat"
+
+            if any([is_g, is_l, is_f, is_h]):
+                g_str = "[#89b4fa]G[/]" if is_g else " "
+                l_str = "[#89b4fa]L[/]" if is_l else " "
+                f_str = "[#89b4fa]F[/]" if is_f else " "
+                h_str = "[#89b4fa]H[/]" if is_h else " "
+                indicator = f"[{g_str}{l_str}{f_str}{h_str}]"
+            else:
+                indicator = ""
 
             tracking_map = {
                 "none": "[#a6e3a1]✅ None[/]",
@@ -246,7 +253,7 @@ class RPCScreen(Screen[str]):
             else:
                 lat_str = f"[#f38ba8]{latency:.0f} ms[/]"
 
-            table.add_row(url_display, source_str, tracking_str, lat_str, key=str(i))
+            table.add_row(indicator, url_display, tracking_str, lat_str, key=str(i))
 
         if table.row_count > 0:
             table.focus()
