@@ -83,8 +83,18 @@ class MainScreen(Screen[str]):
     BINDINGS = [
         Binding("enter", "submit", "Select", tooltip="Select the highlighted chain"),
         Binding("escape", "app.quit", "Cancel", tooltip="Quit the RPC picker"),
-        Binding("ctrl+f", "toggle_filter_favs", "Favorites only", tooltip="Toggle showing only your favorite chains"),  # noqa: E501
-        Binding("ctrl+t", "toggle_filter_type", "Chain Type", tooltip="Toggle between All, Testnets and Mainnets"),  # noqa: E501
+        Binding(
+            "ctrl+f",
+            "toggle_filter_favs",
+            "Favorites only",
+            tooltip="Toggle showing only your favorite chains",
+        ),  # noqa: E501
+        Binding(
+            "ctrl+t",
+            "toggle_filter_type",
+            "Chain Type",
+            tooltip="Toggle between All, Testnets and Mainnets",
+        ),  # noqa: E501
         Binding("ctrl+r", "refresh_data", "Refresh Data from chainlist.org", show=False),
     ]
 

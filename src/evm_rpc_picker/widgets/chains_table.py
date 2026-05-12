@@ -10,8 +10,18 @@ class ChainsTable(DataTable):
         Binding("end", "cursor_bottom", "Bottom", show=False),
         Binding("enter", "select_cursor", "Select", tooltip="Select the highlighted chain"),
         Binding("escape", "app.quit", "Cancel", tooltip="Quit the RPC picker"),
-        Binding("ctrl+l", "screen.toggle_favorite", "Fav (Local)", tooltip="Add/remove from local project favorites"),  # noqa: E501
-        Binding("ctrl+g", "screen.toggle_global_favorite", "Fav (Global)", tooltip="Add/remove from global favorites"),  # noqa: E501
+        Binding(
+            "ctrl+l",
+            "screen.toggle_favorite",
+            "Fav (Local)",
+            tooltip="Add/remove from local project favorites",
+        ),  # noqa: E501
+        Binding(
+            "ctrl+g",
+            "screen.toggle_global_favorite",
+            "Fav (Global)",
+            tooltip="Add/remove from global favorites",
+        ),  # noqa: E501
     ]
 
     def action_cursor_top(self) -> None:

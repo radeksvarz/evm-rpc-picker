@@ -11,9 +11,10 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal
 from textual.screen import Screen
-from textual.widgets import DataTable, Footer, Header, Label
+from textual.widgets import DataTable, Footer, Label
 
 from ..context import ContextDetector
+from ..widgets.custom_header import CustomHeader
 from .add_rpc_modal import AddRPCModal
 from .password_modal import PasswordModal
 
@@ -170,11 +171,10 @@ class RPCScreen(Screen[str]):
         native = self.chain.get("nativeCurrency", {}).get("symbol", "N/A")
         info_url = self.chain.get("infoURL", "")
 
-        yield Header()
+        yield CustomHeader(f"Ξ EVM RPC Picker / {name}")
         with Horizontal(id="rpc-header"):
             yield Label(
-                f"[bold #89b4fa]{name}[/bold #89b4fa] (ID: {cid}, "
-                f"Short: {short}, Currency: {native})",
+                f"ID: {cid} | Short: {short} | Currency: {native}",
                 id="header-left",
             )
             yield Label(f"{info_url}", id="header-right")

@@ -1,3 +1,5 @@
+from typing import Any
+
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.widgets import Label
@@ -25,8 +27,12 @@ class CustomHeader(Horizontal):
     }
     """
 
+    def __init__(self, title: str = "Ξ EVM RPC Picker", **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._header_title = title
+
     def compose(self) -> ComposeResult:
-        yield Label("Ξ EVM RPC Picker", id="header-title")
+        yield Label(self._header_title, id="header-title")
         yield Label("CU @ 🍻 BeerFi Prague", id="header-subtitle")
 
     def on_click(self) -> None:
