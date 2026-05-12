@@ -8,12 +8,13 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal
 from textual.screen import Screen
-from textual.widgets import DataTable, Footer, Label
+from textual.widgets import Button, DataTable, Footer, Label
 
 from ..commands import RefreshDataProvider
 from ..context import ContextDetector
 from ..models import fetch_chains, get_cached_chains
 from ..widgets import ChainsTable, ContextBar, CustomHeader, EnvStatus, SearchInput
+from .custom_rpcs_screen import CustomRPCScreen
 from .rpc_screen import RPCScreen
 
 
@@ -78,6 +79,11 @@ class MainScreen(Screen[str]):
         color: #f5e0dc;
         text-style: bold;
     }
+
+    #btn-custom-rpcs {
+        width: 100%;
+        margin: 1 2;
+    }
     """
 
     BINDINGS = [
@@ -117,6 +123,7 @@ class MainScreen(Screen[str]):
             table.can_focus = True
             yield table
             yield ContextBar(id="context-bar-widget")
+        yield Button("Manage Custom RPCs", id="btn-custom-rpcs", variant="primary")
         yield EnvStatus(id="env-status-widget")
         yield Footer()
 
@@ -167,6 +174,10 @@ class MainScreen(Screen[str]):
         """Trigger search update to refresh table contents and indicators."""
         self.query_one(ContextBar).update_status()
         self.apply_filter()
+
+    @on(Button.Pressed, "#btn-custom-rpcs")
+    def on_custom_rpcs_pressed(self) -> None:
+        self.app.push_screen(CustomRPCScreen(), self._on_rpc_selected)
 
     async def action_refresh_data(self) -> None:
         """Force refresh data from chainlist.org."""

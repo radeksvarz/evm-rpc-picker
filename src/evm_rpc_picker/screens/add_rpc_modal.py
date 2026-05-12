@@ -8,12 +8,18 @@ from textual.widgets import Button, Checkbox, Input, Label, TextArea
 class AddRPCModal(ModalScreen[dict]):
     """Modal to add or edit a custom RPC."""
 
-    def __init__(self, chain_name: str, chain_id: int, initial_data: dict | None = None):
+    def __init__(
+        self,
+        chain_name: str | None = None,
+        chain_id: int | None = None,
+        initial_data: dict | None = None,
+    ):
         super().__init__()
         self.chain_name = chain_name
         self.chain_id = chain_id
         self.initial_data = initial_data or {}
         self.is_edit = bool(initial_data)
+        self.needs_chain_id = chain_id is None
 
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
@@ -85,7 +91,18 @@ class AddRPCModal(ModalScreen[dict]):
     def compose(self) -> ComposeResult:
         with Vertical(id="add-rpc-container"):
             title = "Edit RPC" if self.is_edit else "Add Custom RPC"
-            yield Label(f"{title} - {self.chain_name} ({self.chain_id})", classes="modal-title")
+            if self.chain_name and self.chain_id is not None:
+                yield Label(f"{title} - {self.chain_name} ({self.chain_id})", classes="modal-title")
+            else:
+                yield Label(title, classes="modal-title")
+
+            if self.needs_chain_id:
+                yield Label("Chain ID", classes="field-label")
+                yield Input(
+                    value=str(self.initial_data.get("chain_id", "")),
+                    placeholder="e.g. 1, 11155111",
+                    id="chain-id-input",
+                )
 
             yield Label("RPC URL", classes="field-label")
             yield Input(
@@ -140,7 +157,17 @@ class AddRPCModal(ModalScreen[dict]):
             self.app.notify("URL is required", severity="error")
             return
 
+        if self.needs_chain_id:
+            chain_id_str = self.query_one("#chain-id-input", Input).value
+            if not chain_id_str.isdigit():
+                self.app.notify("Valid Chain ID is required", severity="error")
+                return
+            chain_id = int(chain_id_str)
+        else:
+            chain_id = int(self.chain_id or 0)
+
         data = {
+            "chain_id": chain_id,
             "url": url,
             "note": self.query_one("#note-input", TextArea).text,
             "secret_note": self.query_one("#secret-note-input", TextArea).text,
