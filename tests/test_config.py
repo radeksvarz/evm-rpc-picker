@@ -47,6 +47,21 @@ def test_load_save_toml(temp_config):
     assert cm._load_toml(invalid_file) == {}
 
 
+def test_toml_multiline_format(temp_config):
+    cm, global_dir, _ = temp_config
+
+    # Add an RPC with a multiline note
+    cm.add_custom_rpc(1, {"url": "http://test.com", "note": "line1\nline2\nline3"}, is_global=True)
+
+    # Read the file directly to verify formatting
+    content = cm.GLOBAL_CONFIG_FILE.read_text()
+
+    # Verify it is written as an array of tables (not inline dictionaries)
+    assert "[[custom_rpcs.1]]" in content
+    # Verify multiline string formatting
+    assert 'note = """line1\nline2\nline3"""' in content
+
+
 def test_favorites(temp_config):
     cm, _, _ = temp_config
 

@@ -208,8 +208,8 @@ class MainScreen(Screen[str]):
         table = self.query_one(ChainsTable)
         table.clear()
 
-        fav_global = self.app.config.get_favorites(project_only=False)
-        fav_local = self.app.config.get_favorites(project_only=True)
+        fav_global = set(self.app.config.global_config.get("favorites", []))
+        fav_local = set(self.app.config.local_config.get("favorites", []))
 
         # Get chains from local tools separately
         foundry_endpoints = ContextDetector.get_foundry_rpc_endpoints()

@@ -272,14 +272,29 @@ class ConfigManager:
             doc.add(tomlkit.nl())
 
             for key, value in data.items():
-                # For multiline strings, tomlkit handles them well if they contain \n
-                doc[key] = value
-                item = doc.get(key)
-                if item is not None and hasattr(item, "comment"):
-                    if key == "favorites":
-                        item.comment("List of Chain IDs for pinned networks")
-                    elif key == "custom_rpcs":
-                        item.comment("Custom RPC endpoints")
+                if key == "favorites":
+                    doc.add(tomlkit.comment("List of Chain IDs for pinned networks"))
+                    doc.add(key, value)
+                    doc.add(tomlkit.nl())
+                elif key == "custom_rpcs":
+                    doc.add(tomlkit.comment("Custom RPC endpoints"))
+                    rpc_table = tomlkit.table()
+                    for chain_id_str, rpcs in value.items():
+                        aot = tomlkit.aot()
+                        for rpc in rpcs:
+                            t = tomlkit.table()
+                            t.indent(2)
+                            for k, v in rpc.items():
+                                if isinstance(v, str) and "\n" in v:
+                                    t.add(k, tomlkit.string(v, multiline=True))
+                                else:
+                                    t.add(k, v)
+                            aot.append(t)
+                        rpc_table.add(chain_id_str, aot)
+                    doc.add(key, rpc_table)
+                    doc.add(tomlkit.nl())
+                else:
+                    doc.add(key, value)
 
             path.write_text(tomlkit.dumps(doc))
         except Exception:
