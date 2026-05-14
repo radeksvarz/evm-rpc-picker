@@ -66,7 +66,7 @@ if rpc_url:
 | `Ctrl + Space` | **Toggle Local Favorite** (Project level) |
 | `Ctrl + Shift + Space` | **Toggle Global Favorite** (Global level) |
 | `Ctrl + R` | **Refresh** chain data from network |
-| `c` | **Init** local project configuration |
+| `Ctrl + E` | **Use Current ETH_RPC_URL** (select current ENV and exit) |
 
 ### RPC Selection Screen
 | Key | Action |
@@ -95,7 +95,23 @@ if rpc_url:
 git clone https://github.com/radeksvarz/evm-rpc-picker.git
 cd evm-rpc-picker
 uv sync
+
+# Run normally
 uv run evm-rpc-picker
+```
+
+### Hot Reloading (TUI Development)
+
+For TUI development with hot reloading, open two terminals.
+
+Terminal 1 (Console output):
+```bash
+uv run textual console
+```
+
+Terminal 2 (App with hot reload):
+```bash
+uv run textual run --dev evm_rpc_picker.tui:ChainRPCPicker
 ```
 
 ---

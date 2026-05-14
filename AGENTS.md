@@ -2,6 +2,7 @@
 
 ## 1. Safety & Critical Rules
 - **Explicit Permission Required**: Always ask before `rm`, changing constants (URLs, timeouts), or adding new dependencies.
+- **Answer-Only Mode**: When the user asks a question, DO NOT proactively implement features or modify files. Only answer the question, or present a proposal and wait for explicit confirmation.
 
 ## 2. Language Policy
 - English only.
