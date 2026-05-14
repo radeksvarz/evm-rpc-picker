@@ -1,3 +1,4 @@
+import subprocess
 from typing import TYPE_CHECKING, Any
 
 from textual import on
@@ -39,6 +40,7 @@ class CustomRPCScreen(Screen[str]):
         Binding("a", "add_rpc", "Add Custom RPC"),
         Binding("e", "edit_rpc", "Edit RPC"),
         Binding("delete", "delete_rpc", "Delete RPC"),
+        Binding("ctrl+v", "paste_add_rpc", "Paste & Add"),
         Binding("enter", "submit", "Select RPC", tooltip="Select the highlighted RPC"),
     ]
 
@@ -128,6 +130,38 @@ class CustomRPCScreen(Screen[str]):
             return None
 
     def action_add_rpc(self) -> None:
+        """Add a new custom RPC."""
+        self._open_add_modal()
+
+    def action_paste_add_rpc(self) -> None:
+        """Paste URL from clipboard and open add modal."""
+        # Try internal app clipboard first
+        clipboard = self.app.clipboard.strip()
+        
+        # Fallback to system clipboard (Wayland/X11)
+        if not clipboard:
+            try:
+                # Try wl-paste (Wayland)
+                clipboard = subprocess.check_output(["wl-paste"], text=True, stderr=subprocess.DEVNULL).strip()
+            except Exception:
+                try:
+                    # Try xclip (X11)
+                    clipboard = subprocess.check_output(
+                        ["xclip", "-selection", "clipboard", "-o"], 
+                        text=True, 
+                        stderr=subprocess.DEVNULL
+                    ).strip()
+                except Exception:
+                    pass
+
+        if clipboard:
+            self._open_add_modal({"url": clipboard})
+        else:
+            self.app.notify("Clipboard is empty (tried app and system)", severity="warning")
+            self._open_add_modal()
+
+    def _open_add_modal(self, initial_data: dict[str, Any] | None = None) -> None:
+        """Internal helper to open the AddRPCModal."""
         def check_add(data: dict[str, Any] | None) -> None:
             if data is None:
                 return
@@ -144,7 +178,7 @@ class CustomRPCScreen(Screen[str]):
             self.app.notify("Custom RPC added", title="Success")
             self.refresh_rpcs()
 
-        self.app.push_screen(AddRPCModal(), check_add)
+        self.app.push_screen(AddRPCModal(initial_data=initial_data), check_add)
 
     def action_edit_rpc(self) -> None:
         selected = self._get_selected_rpc()
