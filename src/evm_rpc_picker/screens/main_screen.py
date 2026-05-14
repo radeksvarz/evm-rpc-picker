@@ -102,6 +102,7 @@ class MainScreen(Screen[str]):
             tooltip="Toggle between All, Testnets and Mainnets",
         ),  # noqa: E501
         Binding("ctrl+r", "refresh_data", "Refresh Data from chainlist.org", show=False),
+        Binding("ctrl+e", "use_current_env", "Use Current ETH_RPC_URL", show=False),
     ]
 
     def __init__(self) -> None:
@@ -149,6 +150,14 @@ class MainScreen(Screen[str]):
         current_idx = modes.index(self.filter_type)
         self.filter_type = modes[(current_idx + 1) % len(modes)]
         self.apply_filter()
+
+    def action_use_current_env(self) -> None:
+        """Use the current ETH_RPC_URL environment variable and exit."""
+        env_status = self.query_one(EnvStatus)
+        if env_status.current_rpc:
+            self.app.exit(env_status.current_rpc)
+        else:
+            self.app.notify("ETH_RPC_URL is not set", severity="warning")
 
     def action_toggle_favorite(self) -> None:
         table = self.query_one(ChainsTable)

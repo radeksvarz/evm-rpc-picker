@@ -73,7 +73,7 @@ class EnvStatus(Horizontal):
     def update_status(self) -> None:
         display_rpc = self.current_rpc or "not set"
         self.status_label.update(
-            f" Current ETH_RPC_URL: [bold #89b4fa]{display_rpc}[/bold #89b4fa]"
+            f" [^E] Current ETH_RPC_URL: [bold #89b4fa]{display_rpc}[/bold #89b4fa]"
         )
 
     @work(exclusive=True)
