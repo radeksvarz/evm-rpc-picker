@@ -185,6 +185,8 @@ class MainScreen(Screen[str]):
 
     async def action_load_data(self, force: bool = False) -> None:
         """Load chains data from cache or network."""
+        table = self.query_one(ChainsTable)
+
         if not force:
             cached = get_cached_chains()
             if cached:
@@ -193,11 +195,14 @@ class MainScreen(Screen[str]):
                 return
 
         self.app.notify("Fetching chain data...", title="Syncing")
+        table.loading = True
         try:
             self.chains = await fetch_chains()
             self.apply_filter()
         except Exception as e:
             self.app.notify(f"Error loading data: {e}", severity="error")
+        finally:
+            table.loading = False
 
     def update_table(self, chains: list[dict[str, Any]]) -> None:
         table = self.query_one(ChainsTable)
