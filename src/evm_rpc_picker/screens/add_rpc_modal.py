@@ -31,6 +31,8 @@ class AddRPCModal(ModalScreen[dict]):
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
         ("ctrl+s", "save", "Save"),
+        ("ctrl+g", "save_global", "Add Globally"),
+        ("ctrl+l", "save_local", "Add Locally"),
     ]
 
     DEFAULT_CSS = """
@@ -161,8 +163,11 @@ class AddRPCModal(ModalScreen[dict]):
 
             with Horizontal(classes="modal-buttons"):
                 yield Button("Cancel [Esc]", id="cancel", variant="error")
-                btn_text = "Save Changes" if self.is_edit else "Add RPC"
-                yield Button(f"{btn_text} [^S]", id="save", variant="success")
+                if self.is_edit:
+                    yield Button("Save Changes [^S]", id="save", variant="success")
+                else:
+                    yield Button("Add Globally [^G]", id="save-global", variant="primary")
+                    yield Button("Add Locally [^L]", id="save-local", variant="success")
 
     def on_mount(self) -> None:
         if self.initial_data.get("encrypted"):
@@ -221,22 +226,22 @@ class AddRPCModal(ModalScreen[dict]):
             btn.disabled = False
             btn.label = "Detect"
 
-    def action_save(self) -> None:
+    def _gather_data(self) -> dict | None:
         url = self.query_one("#url-input", Input).value
         if not url:
             self.app.notify("URL is required", severity="error")
-            return
+            return None
 
         if self.needs_chain_id:
             chain_id_str = self.query_one("#chain-id-input", Input).value
             if not chain_id_str.isdigit():
                 self.app.notify("Valid Chain ID is required", severity="error")
-                return
+                return None
             chain_id = int(chain_id_str)
         else:
             chain_id = int(self.chain_id or 0)
 
-        data = {
+        return {
             "chain_id": chain_id,
             "url": url,
             "network_type": self.query_one("#network-type-select", Select).value,
@@ -245,8 +250,38 @@ class AddRPCModal(ModalScreen[dict]):
             "encrypt": self.query_one("#encrypt-check", Checkbox).value,
             "password": self.query_one("#password-input", Input).value,
         }
-        self.dismiss(data)
+
+    def action_save(self) -> None:
+        if not self.is_edit:
+            return
+        data = self._gather_data()
+        if data:
+            self.dismiss(data)
+
+    def action_save_global(self) -> None:
+        if self.is_edit:
+            return
+        data = self._gather_data()
+        if data:
+            data["is_global"] = True
+            self.dismiss(data)
+
+    def action_save_local(self) -> None:
+        if self.is_edit:
+            return
+        data = self._gather_data()
+        if data:
+            data["is_global"] = False
+            self.dismiss(data)
 
     @on(Button.Pressed, "#save")
     def on_save(self) -> None:
         self.action_save()
+
+    @on(Button.Pressed, "#save-global")
+    def on_save_global(self) -> None:
+        self.action_save_global()
+
+    @on(Button.Pressed, "#save-local")
+    def on_save_local(self) -> None:
+        self.action_save_local()

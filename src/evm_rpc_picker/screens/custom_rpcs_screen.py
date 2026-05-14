@@ -118,23 +118,16 @@ class CustomRPCScreen(Screen[str]):
                 return
 
             chain_id = data.pop("chain_id")
+            is_global = data.pop("is_global", False)
 
-            def finish_add(is_global: bool | None) -> None:
-                if is_global is None:
-                    return
-                self.app.config.add_custom_rpc(
-                    chain_id,
-                    data,
-                    is_global=is_global,
-                    password=data.get("password"),
-                )
-                self.app.notify("Custom RPC added", title="Success")
-                self.refresh_rpcs()
-
-            self.app.push_screen(
-                ConfirmModal("Save globally? (Yes = Global, No = Local)"),
-                finish_add,
+            self.app.config.add_custom_rpc(
+                chain_id,
+                data,
+                is_global=is_global,
+                password=data.get("password"),
             )
+            self.app.notify("Custom RPC added", title="Success")
+            self.refresh_rpcs()
 
         self.app.push_screen(AddRPCModal(), check_add)
 
