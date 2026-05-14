@@ -262,6 +262,14 @@ class RPCScreen(Screen[str]):
         if not hasattr(self, "rpc_data_with_latency"):
             return
 
+        table = self.query_one(DataTable)
+
+        # Preserve selection
+        selected_url = None
+        selected_rpc = self._get_selected_rpc()
+        if selected_rpc:
+            selected_url = selected_rpc.get("url")
+
         items = self.rpc_data_with_latency
 
         # Get favorites for sorting
@@ -273,7 +281,7 @@ class RPCScreen(Screen[str]):
             url = x.get("url", "")
             is_fav_local = url in fav_local
             is_fav_global = url in fav_global
-            
+
             # Priority: Local Fav > Global Fav > Others
             priority = 0 if is_fav_local else (1 if is_fav_global else 2)
             has_no_latency = x["latency"] is None
@@ -282,14 +290,17 @@ class RPCScreen(Screen[str]):
 
         self.current_sorted_rpcs = sorted(items, key=sort_key)
 
-        table = self.query_one(DataTable)
         table.clear()
 
         fav_global_urls = self.app.config.global_config.get("favorite_rpcs", [])
         fav_local_urls = self.app.config.local_config.get("favorite_rpcs", [])
 
+        new_index = 0
         for i, d in enumerate(self.current_sorted_rpcs):
             url = d.get("url", "")
+            if selected_url and url == selected_url:
+                new_index = i
+
             url_display = d.get("display_url", "")
             if d.get("is_secret"):
                 url_display = f"🔒 {url_display}"
@@ -338,6 +349,7 @@ class RPCScreen(Screen[str]):
 
         table.loading = False
         if table.row_count > 0:
+            table.move_cursor(row=new_index)
             table.focus()
 
     async def ping_rpc(self, client: httpx.AsyncClient, item: dict[str, Any]) -> None:
