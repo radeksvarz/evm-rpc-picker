@@ -73,10 +73,7 @@ if rpc_url:
 |-----|--------|
 | `Enter` | **Select** RPC and exit |
 | `Esc` | **Back** to main screen |
-| `a` | **Add** custom RPC for this chain |
-| `v` | **Paste** custom RPC |
-| `e` | **Edit** highlighted custom RPC |
-| `r` | **Refresh** latencies |
+| `Ctrl + R` | **Refresh** latencies |
 
 ### Personal RPC URLs Screen
 | Key | Action |

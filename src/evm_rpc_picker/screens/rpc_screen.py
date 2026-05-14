@@ -15,7 +15,6 @@ from textual.widgets import DataTable, Footer, Label
 
 from ..context import ContextDetector
 from ..widgets.custom_header import CustomHeader
-from .add_rpc_modal import AddRPCModal
 from .password_modal import PasswordModal
 
 
@@ -69,10 +68,7 @@ class RPCScreen(Screen[str]):
 
     BINDINGS = [
         Binding("escape", "dismiss(None)", "Back"),
-        Binding("a", "add_rpc", "Add Custom"),
-        Binding("v", "paste_rpc", "Paste"),
-        Binding("e", "edit_rpc", "Edit"),
-        Binding("r", "retry", "Retry"),
+        Binding("ctrl+r", "retry", "Retest"),
         Binding("enter", "submit", "Select RPC", tooltip="Select the highlighted RPC"),
     ]
 
@@ -302,33 +298,6 @@ class RPCScreen(Screen[str]):
     def action_retry(self) -> None:
         self.run_worker(self.refresh_rpcs())
 
-    def action_add_rpc(self) -> None:
-        """Open the modal to add a custom RPC."""
-        self.app.push_screen(
-            AddRPCModal(self.chain.get("name", "Unknown"), self.chain.get("chainId", 0)),
-            self._on_rpc_added,
-        )
-
-    def action_paste_rpc(self) -> None:
-        """Open the modal with current clipboard (planned)."""
-        self.action_add_rpc()
-
-    def _on_rpc_added(self, data: dict[str, Any] | None) -> None:
-        if not data:
-            return
-
-        cm = self.app.config
-        # Default to local if it exists, otherwise global
-        is_global = not cm.local_config_exists()
-
-        cid = self.chain.get("chainId")
-        if cid is not None:
-            cm.add_custom_rpc(int(cid), data, is_global=is_global)
-        self.app.notify("Custom RPC added", title="Success")
-
-        self.rpc_data = self._gather_rpcs()
-        self.run_worker(self.refresh_rpcs())
-
     def _get_selected_rpc(self) -> dict[str, Any] | None:
         table = self.query_one(DataTable)
         if not table.row_count:
@@ -343,79 +312,6 @@ class RPCScreen(Screen[str]):
             return self.current_sorted_rpcs[idx]
         except (ValueError, TypeError, AttributeError, IndexError):
             return None
-
-    def action_edit_rpc(self) -> None:
-        """Edit the highlighted custom RPC."""
-        item = self._get_selected_rpc()
-        if not item:
-            return
-
-        if not item.get("id"):
-            self.app.notify("Only custom RPCs can be edited", severity="warning")
-            return
-
-        initial_data: dict[str, Any] = {
-            "url": item.get("url"),
-            "note": item.get("note", ""),
-            "encrypted": item.get("encrypted", False),
-        }
-
-        if item.get("is_secret"):
-            if item.get("encrypted"):
-                self.app.push_screen(
-                    PasswordModal(),
-                    lambda p: self._on_password_for_edit(item, initial_data, p),
-                )
-            else:
-                self._on_password_for_edit(item, initial_data, None)
-        else:
-            self._open_edit_modal(item, initial_data)
-
-    def _on_password_for_edit(
-        self, item: dict[str, Any], initial_data: dict[str, Any], password: str | None
-    ) -> None:
-        if item.get("encrypted") and not password:
-            return
-
-        rpc_id = item.get("id")
-        if not rpc_id:
-            return
-
-        secrets = self.app.config.load_rpc_secret(rpc_id, password)
-        if secrets["status"] == "ok":
-            initial_data["secret_note"] = secrets.get("secret_note", "")
-            if secrets.get("api_key"):
-                initial_data["url"] = f"{initial_data['url']}/{secrets['api_key']}"
-
-            self._open_edit_modal(item, initial_data)
-        elif secrets["status"] == "wrong_password":
-            self.app.notify("Wrong password", severity="error")
-
-    def _open_edit_modal(self, item: dict[str, Any], initial_data: dict[str, Any]) -> None:
-        self.app.push_screen(
-            AddRPCModal(
-                self.chain.get("name", "Unknown"),
-                int(self.chain.get("chainId", 0)),
-                initial_data,
-            ),
-            lambda d: self._handle_edit_result(item, d),
-        )
-
-    def _handle_edit_result(self, item: dict[str, Any], data: dict[str, Any] | None) -> None:
-        if not data:
-            return
-
-        rpc_id = item.get("id")
-        if not rpc_id:
-            return
-
-        is_global = item.get("source") == "global"
-        self.app.config.update_custom_rpc(
-            int(self.chain.get("chainId", 0)), rpc_id, data, is_global=is_global
-        )
-        self.app.notify("RPC updated")
-        self.rpc_data = self._gather_rpcs()
-        self.run_worker(self.refresh_rpcs())
 
     @on(DataTable.RowSelected)
     def on_rpc_selected_list(self, event: DataTable.RowSelected) -> None:
