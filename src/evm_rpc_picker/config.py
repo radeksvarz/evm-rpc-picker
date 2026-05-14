@@ -62,6 +62,33 @@ class ConfigManager:
         else:
             self.local_config = config
 
+    def get_favorite_rpcs(self, project_only: bool = False) -> set[str]:
+        """Get a set of favorite RPC URLs from both configs or just local."""
+        favorites = set(self.local_config.get("favorite_rpcs", []))
+        if not project_only:
+            favorites.update(self.global_config.get("favorite_rpcs", []))
+        return favorites
+
+    def toggle_favorite_rpc(self, url: str, is_global: bool = False) -> None:
+        """Toggle a favorite RPC URL in the specified config."""
+        config = self.global_config if is_global else self.local_config
+        path = self.GLOBAL_CONFIG_FILE if is_global else self.LOCAL_CONFIG_FILE
+
+        favorites = list(config.get("favorite_rpcs", []))
+        if url in favorites:
+            favorites.remove(url)
+        else:
+            favorites.append(url)
+
+        config["favorite_rpcs"] = favorites
+        self._save_toml(path, config, is_global=is_global)
+
+        # Update internal state
+        if is_global:
+            self.global_config = config
+        else:
+            self.local_config = config
+
     # --- Secrets ---
 
     def set_secret(self, key_name: str, secret_value: str) -> None:
@@ -276,6 +303,10 @@ class ConfigManager:
                     doc.add(tomlkit.comment("List of Chain IDs for pinned networks"))
                     doc.add(key, value)
                     doc.add(tomlkit.nl())
+                elif key == "favorite_rpcs":
+                    doc.add(tomlkit.comment("List of favorite RPC URLs"))
+                    doc.add(key, value)
+                    doc.add(tomlkit.nl())
                 elif key == "custom_rpcs":
                     doc.add(tomlkit.comment("Custom RPC endpoints"))
                     rpc_table = tomlkit.table()
@@ -311,6 +342,6 @@ class ConfigManager:
     def init_local_config(self) -> None:
         """Create an empty local config file."""
         if not self.local_config_exists():
-            default_config: dict[str, Any] = {"favorite_chains": [], "custom_rpcs": {}}
+            default_config: dict[str, Any] = {"favorite_chains": [], "favorite_rpcs": [], "custom_rpcs": {}}
             self._save_toml(self.LOCAL_CONFIG_FILE, default_config)
             self.local_config = default_config

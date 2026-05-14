@@ -102,7 +102,7 @@ async def test_rpc_selection_and_exit() -> None:
         table.focus()
         table.move_cursor(row=0)
         await pilot.press("enter")
-        await pilot.pause(0.5)
+        await pilot.pause(1.0)
 
         data_table = app.screen.query_one(DataTable)
         if data_table.row_count > 0:

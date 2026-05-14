@@ -22,6 +22,18 @@ class RPCTable(DataTable):
     BINDINGS = [
         Binding("home", "cursor_top", "Top", show=False),
         Binding("end", "cursor_bottom", "Bottom", show=False),
+        Binding(
+            "ctrl+l",
+            "screen.toggle_favorite",
+            "Fav (Local)",
+            tooltip="Add/remove from local project favorites",
+        ),
+        Binding(
+            "ctrl+g",
+            "screen.toggle_global_favorite",
+            "Fav (Global)",
+            tooltip="Add/remove from global favorites",
+        ),
     ]
 
     def action_cursor_top(self) -> None:
@@ -220,18 +232,38 @@ class RPCScreen(Screen[str]):
             tasks = [self.ping_rpc(client, item) for item in items]
             await asyncio.gather(*tasks)
 
-        # Sort by latency (None at the end)
-        self.current_sorted_rpcs = sorted(
-            items, key=lambda x: (x["latency"] is None, x["latency"] or 9999)
-        )
+        # Get favorites for sorting
+        fav_global = self.app.config.get_favorite_rpcs(project_only=False)
+        fav_local = self.app.config.get_favorite_rpcs(project_only=True)
+
+        # Sort by favorite status then latency (None at the end)
+        def sort_key(x: dict[str, Any]) -> tuple[int, bool, float]:
+            url = x.get("url", "")
+            is_fav_local = url in fav_local
+            is_fav_global = url in fav_global
+            
+            # Priority: Local Fav > Global Fav > Others
+            priority = 0 if is_fav_local else (1 if is_fav_global else 2)
+            has_no_latency = x["latency"] is None
+            latency = x["latency"] or 9999
+            return (priority, has_no_latency, latency)
+
+        self.current_sorted_rpcs = sorted(items, key=sort_key)
 
         table = self.query_one(DataTable)
         table.clear()
 
+        fav_global_urls = self.app.config.global_config.get("favorite_rpcs", [])
+        fav_local_urls = self.app.config.local_config.get("favorite_rpcs", [])
+
         for i, d in enumerate(self.current_sorted_rpcs):
+            url = d.get("url", "")
             url_display = d.get("display_url", "")
             if d.get("is_secret"):
                 url_display = f"🔒 {url_display}"
+
+            is_fav_g = url in fav_global_urls
+            is_fav_l = url in fav_local_urls
 
             source = d.get("source", "")
             is_g = source == "global"
@@ -239,14 +271,19 @@ class RPCScreen(Screen[str]):
             is_f = source == "foundry"
             is_h = source == "hardhat"
 
-            if any([is_g, is_l, is_f, is_h]):
-                g_str = "[#89b4fa]G[/]" if is_g else " "
-                l_str = "[#89b4fa]L[/]" if is_l else " "
-                f_str = "[#89b4fa]F[/]" if is_f else " "
-                h_str = "[#89b4fa]H[/]" if is_h else " "
-                indicator = f"[{g_str}{l_str}{f_str}{h_str}]"
+            # Combine source indicator with favorite star
+            star = "[#f9e2af]*[/] " if (is_fav_g or is_fav_l) else ""
+            
+            indicator_parts = []
+            if is_g: indicator_parts.append("[#89b4fa]G[/]")
+            if is_l: indicator_parts.append("[#89b4fa]L[/]")
+            if is_f: indicator_parts.append("[#89b4fa]F[/]")
+            if is_h: indicator_parts.append("[#89b4fa]H[/]")
+            
+            if indicator_parts:
+                indicator = f"{star}[{''.join(indicator_parts)}]"
             else:
-                indicator = ""
+                indicator = star
 
             tracking_map = {
                 "none": "[#a6e3a1]None[/]",
@@ -348,3 +385,21 @@ class RPCScreen(Screen[str]):
             self.app.notify("Wrong password", severity="error")
         else:
             self.app.notify("Error loading secret", severity="error")
+
+    def action_toggle_favorite(self) -> None:
+        """Toggle favorite for the selected RPC (local)."""
+        selected = self._get_selected_rpc()
+        if selected:
+            url = selected.get("url")
+            if url:
+                self.app.config.toggle_favorite_rpc(url, is_global=False)
+                self.run_worker(self.refresh_rpcs())
+
+    def action_toggle_global_favorite(self) -> None:
+        """Toggle favorite for the selected RPC (global)."""
+        selected = self._get_selected_rpc()
+        if selected:
+            url = selected.get("url")
+            if url:
+                self.app.config.toggle_favorite_rpc(url, is_global=True)
+                self.run_worker(self.refresh_rpcs())

@@ -62,8 +62,8 @@ if rpc_url:
 | `Enter` | **Select** highlighted chain to see RPCs |
 | `Ctrl + F` | **Filter Favorites** toggle |
 | `Ctrl + T` | **Filter Network Type** (All ↔ Mainnet ↔ Testnet) |
-| `Ctrl + Space` | **Toggle Local Favorite** (Project level) |
-| `Ctrl + Shift + Space` | **Toggle Global Favorite** (Global level) |
+| `Ctrl + L` | **Toggle Local Favorite** (Project level) |
+| `Ctrl + G` | **Toggle Global Favorite** (Global level) |
 | `Ctrl + R` | **Refresh** chain data from network |
 | `Ctrl + E` | **Use Current ETH_RPC_URL** (select current ENV and exit) |
 | `Ctrl + U` | **Personal RPC URLs** (manage and select custom endpoints) |
@@ -74,6 +74,8 @@ if rpc_url:
 | `Enter` | **Select** RPC and exit |
 | `Esc` | **Back** to main screen |
 | `Ctrl + R` | **Refresh** latencies |
+| `Ctrl + L` | **Toggle Local Favorite** (Project level) |
+| `Ctrl + G` | **Toggle Global Favorite** (Global level) |
 
 ### Personal RPC URLs Screen
 | Key | Action |
