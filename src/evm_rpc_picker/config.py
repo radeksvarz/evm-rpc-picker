@@ -86,6 +86,7 @@ class ConfigManager:
         path = self.GLOBAL_CONFIG_FILE if is_global else self.LOCAL_CONFIG_FILE
 
         favorites = list(config.get("favorite_rpcs", []))
+        url = url.strip()
         if url in favorites:
             favorites.remove(url)
         else:

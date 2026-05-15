@@ -47,8 +47,8 @@ class FavoriteRPCTab(Static):
         self.load_data()
 
     def load_data(self) -> None:
-        fav_global = set(self.app.config.global_config.get("favorite_rpcs", []))
-        fav_local = set(self.app.config.local_config.get("favorite_rpcs", []))
+        fav_global = {u.strip() for u in self.app.config.global_config.get("favorite_rpcs", [])}
+        fav_local = {u.strip() for u in self.app.config.local_config.get("favorite_rpcs", [])}
         all_favs = fav_global.union(fav_local)
         self.fav_urls = sorted(all_favs)
 
@@ -78,7 +78,7 @@ class FavoriteRPCTab(Static):
         self.rpc_details = {}
         for url in self.fav_urls:
             self.rpc_details[url] = {
-                "chain_name": url_to_chain.get(url, "Unknown Chain"),
+                "chain_name": url_to_chain.get(url.strip(), "Unknown Chain"),
                 "url": url,
                 "latency": "--- ms",
                 "is_global": url in fav_global,
@@ -91,14 +91,19 @@ class FavoriteRPCTab(Static):
         selected_url = self._get_selected_rpc_url()
         self.table.clear()
 
-        def sort_key(url: str) -> tuple[int, str]:
+        def sort_key(url: str) -> tuple[str, float]:
             d = self.rpc_details[url]
-            score = 0
-            if d["is_local"]:
-                score -= 2
-            elif d["is_global"]:
-                score -= 1
-            return (score, url)
+            # Secondary sort by latency (numeric)
+            import re
+
+            lat_str = d["latency"]
+            lat_val = 999999.0
+            if "ms" in lat_str:
+                match = re.search(r"(\d+)", lat_str)
+                if match:
+                    lat_val = float(match.group(1))
+
+            return (d["chain_name"], lat_val)
 
         sorted_urls = sorted(self.fav_urls, key=sort_key)
         selected_index = 0

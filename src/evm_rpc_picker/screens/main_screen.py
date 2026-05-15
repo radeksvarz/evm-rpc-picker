@@ -71,6 +71,14 @@ class MainScreen(Screen[str]):
         if event.tab.id:
             switcher.current = event.tab.id
 
+            # Refresh data in the activated tab
+            with contextlib.suppress(Exception):
+                tab_content = self.query_one(f"#{event.tab.id}")
+                if hasattr(tab_content, "load_data"):
+                    tab_content.load_data()
+                elif hasattr(tab_content, "refresh_rpcs"):
+                    tab_content.refresh_rpcs()
+
             # Use call_after_refresh to ensure the new tab is rendered before focusing
             def focus_new_tab() -> None:
                 with contextlib.suppress(Exception):
