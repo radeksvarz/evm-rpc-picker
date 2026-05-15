@@ -125,9 +125,9 @@ class RPCScreen(Screen[str]):
             url = None
             tracking = "unspecified"
             if isinstance(r, str):
-                url = r
+                url = r.strip()
             elif isinstance(r, dict):
-                url = r.get("url")
+                url = r.get("url", "").strip()
                 tracking = r.get("tracking", "unspecified")
 
             if url and not url.startswith("wss://"):
@@ -152,7 +152,7 @@ class RPCScreen(Screen[str]):
 
         custom = cm.get_custom_rpcs(int(cid))
         for c in custom:
-            url = c.get("url", "")
+            url = c.get("url", "").strip()
             is_encrypted = c.get("encrypted", False)
             has_secrets = c.get("has_secrets", False)
             rpc_id = str(c.get("id"))
@@ -199,8 +199,8 @@ class RPCScreen(Screen[str]):
             if f_name.lower() in (name, short):
                 rpcs.append(
                     {
-                        "url": f_url,
-                        "display_url": f_url,
+                        "url": f_url.strip(),
+                        "display_url": f_url.strip(),
                         "tracking": "none",
                         "source": "foundry",
                         "is_secret": False,

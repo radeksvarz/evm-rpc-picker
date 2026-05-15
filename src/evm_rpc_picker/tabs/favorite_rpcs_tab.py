@@ -57,7 +57,8 @@ class FavoriteRPCTab(Static):
         for c in chains:
             c_name = c.get("name", "Unknown")
             for rpc_entry in c.get("rpc", []):
-                url = rpc_entry if isinstance(rpc_entry, str) else rpc_entry.get("url")
+                url = rpc_entry if isinstance(rpc_entry, str) else rpc_entry.get("url", "")
+                url = url.strip()
                 if url:
                     url_to_chain[url] = c_name
 
@@ -71,8 +72,8 @@ class FavoriteRPCTab(Static):
                     f"Chain {cid_str}",
                 )
                 for r in chain_rpcs:
-                    r_url = str(r.get("url", ""))
-                    url_to_chain[r_url] = str(r.get("name") or fallback)
+                    url = str(r.get("url", "")).strip()
+                    url_to_chain[url] = str(r.get("name") or fallback)
 
         self.rpc_details = {}
         for url in self.fav_urls:

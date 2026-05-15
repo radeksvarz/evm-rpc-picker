@@ -73,7 +73,7 @@ class CustomRPCTab(Static):
         for i, rpc in enumerate(self.rpcs):
             cid = rpc["chain_id"]
             rpc_id = rpc["id"]
-            url = rpc.get("url", "")
+            url = rpc.get("url", "").strip()
             is_g = rpc["source"] == "global"
             src_str = "[#89b4fa]G[/]" if is_g else "[#89b4fa]L[/]"
 
