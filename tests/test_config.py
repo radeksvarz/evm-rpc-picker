@@ -11,6 +11,7 @@ from evm_rpc_picker.config import ConfigManager, EncryptionManager
 def temp_config(tmp_path):
     """Fixture to mock config paths and return a ConfigManager instance."""
     global_dir = tmp_path / "global"
+    global_dir.mkdir()
     local_file = tmp_path / "local" / ".rpc-picker.toml"
     local_file.parent.mkdir()
 
@@ -79,6 +80,67 @@ def test_favorites(temp_config):
     # Untoggle
     cm.toggle_favorite(1, is_global=True)
     assert 1 not in cm.get_favorites()
+
+    # Favorite RPCs
+    cm.toggle_favorite_rpc("http://test", is_global=True)
+    assert "http://test" in cm.get_favorite_rpcs()
+    assert "http://test" in cm.get_favorite_rpcs(project_only=False)
+    assert "http://test" not in cm.get_favorite_rpcs(project_only=True)
+    
+    # Untoggle RPC
+    cm.toggle_favorite_rpc("http://test", is_global=True)
+    assert "http://test" not in cm.get_favorite_rpcs()
+
+    # Local toggle RPC
+    cm.toggle_favorite_rpc("http://local", is_global=False)
+    assert "http://local" in cm.get_favorite_rpcs()
+    cm.toggle_favorite_rpc("http://local", is_global=False)
+    assert "http://local" not in cm.get_favorite_rpcs()
+
+def test_config_exists_and_schema_update(temp_config):
+    cm, global_dir, local_file = temp_config
+    
+    # Create the global file
+    cm.GLOBAL_CONFIG_FILE.write_text("[favorite_chains]\n")
+    
+    # Test global_config_exists
+    assert cm.global_config_exists() == True
+    
+    # Test schema upgrade manually
+    old_config = {"favorite_chains": []}
+    cm._ensure_schema_version(old_config, cm.GLOBAL_CONFIG_FILE, is_global=True)
+    assert old_config.get("schema_version") == cm.CURRENT_SCHEMA_VERSION
+
+def test_keyring_wrapper(temp_config):
+    cm, _, _ = temp_config
+    
+    with patch("keyring.set_password") as mock_set:
+        cm.set_secret("test_key", "test_val")
+        mock_set.assert_called_once_with(cm.APP_NAME, "test_key", "test_val")
+        
+    with patch("keyring.get_password", return_value="test_val") as mock_get:
+        assert cm.get_secret("test_key") == "test_val"
+        mock_get.assert_called_once_with(cm.APP_NAME, "test_key")
+        
+    with patch("keyring.delete_password") as mock_del:
+        cm.delete_secret("test_key")
+        mock_del.assert_called_once_with(cm.APP_NAME, "test_key")
+        
+    import keyring
+    with patch("keyring.delete_password", side_effect=keyring.errors.PasswordDeleteError):
+        # Should catch and pass
+        cm.delete_secret("test_key")
+
+def test_save_toml_exception(temp_config):
+    cm, global_dir, _ = temp_config
+    test_path = global_dir / "test2.toml"
+    
+    # Force an exception by passing an object that tomlkit cannot serialize
+    class Unserializable:
+        pass
+        
+    cm._save_toml(test_path, {"bad": Unserializable()})
+    assert not test_path.exists()
 
 
 def test_encryption_manager():

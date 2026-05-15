@@ -17,11 +17,22 @@ class ConfigManager:
     GLOBAL_CONFIG_DIR = Path(user_config_dir(APP_NAME))
     GLOBAL_CONFIG_FILE = GLOBAL_CONFIG_DIR / "config.toml"
     LOCAL_CONFIG_FILE = Path("./.rpc-picker.toml")
+    CURRENT_SCHEMA_VERSION = 1
 
     def __init__(self) -> None:
         self.global_config: dict[str, Any] = self._load_toml(self.GLOBAL_CONFIG_FILE)
         self.local_config: dict[str, Any] = self._load_toml(self.LOCAL_CONFIG_FILE)
         self.encryption_manager = EncryptionManager()
+
+        self._ensure_schema_version(self.global_config, self.GLOBAL_CONFIG_FILE, is_global=True)
+        if self.local_config_exists():
+            self._ensure_schema_version(self.local_config, self.LOCAL_CONFIG_FILE, is_global=False)
+
+    def _ensure_schema_version(self, config: dict[str, Any], path: Path, is_global: bool) -> None:
+        """Ensure the config has the current schema version and save it if needed."""
+        if path.exists() and config.get("schema_version") != self.CURRENT_SCHEMA_VERSION:
+            config["schema_version"] = self.CURRENT_SCHEMA_VERSION
+            self._save_toml(path, config, is_global=is_global)
 
     def _load_toml(self, path: Path) -> dict[str, Any]:
         """Load configuration from a TOML file."""
@@ -299,7 +310,11 @@ class ConfigManager:
             doc.add(tomlkit.nl())
 
             for key, value in data.items():
-                if key == "favorite_chains":
+                if key == "schema_version":
+                    doc.add(tomlkit.comment(f"Config schema version (current: {self.CURRENT_SCHEMA_VERSION})"))
+                    doc.add(key, value)
+                    doc.add(tomlkit.nl())
+                elif key == "favorite_chains":
                     doc.add(tomlkit.comment("List of Chain IDs for pinned networks"))
                     doc.add(key, value)
                     doc.add(tomlkit.nl())
@@ -342,6 +357,11 @@ class ConfigManager:
     def init_local_config(self) -> None:
         """Create an empty local config file."""
         if not self.local_config_exists():
-            default_config: dict[str, Any] = {"favorite_chains": [], "favorite_rpcs": [], "custom_rpcs": {}}
+            default_config: dict[str, Any] = {
+                "schema_version": self.CURRENT_SCHEMA_VERSION,
+                "favorite_chains": [],
+                "favorite_rpcs": [],
+                "custom_rpcs": {},
+            }
             self._save_toml(self.LOCAL_CONFIG_FILE, default_config)
             self.local_config = default_config
