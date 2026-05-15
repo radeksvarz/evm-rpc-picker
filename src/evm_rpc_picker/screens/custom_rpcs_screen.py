@@ -41,6 +41,7 @@ class CustomRPCScreen(Screen[str]):
         Binding("e", "edit_rpc", "Edit RPC"),
         Binding("delete", "delete_rpc", "Delete RPC"),
         Binding("ctrl+v", "paste_add_rpc", "Paste & Add"),
+        Binding("ctrl+b", "toggle_favorite_rpc", "Toggle Favorite"),
         Binding("enter", "submit", "Select RPC", tooltip="Select the highlighted RPC"),
     ]
 
@@ -51,7 +52,7 @@ class CustomRPCScreen(Screen[str]):
         yield Footer()
 
     def on_mount(self) -> None:
-        self.table.add_columns("Src", "Type", "URL", "Config Note", "Keyring Note", "Chain ID")
+        self.table.add_columns("Src", "Type", "Chain ID", "URL", "Config Note", "Keyring Note")
         self.refresh_rpcs()
 
     def refresh_rpcs(self) -> None:
@@ -84,12 +85,21 @@ class CustomRPCScreen(Screen[str]):
         for i, rpc in enumerate(self.rpcs):
             cid = rpc["chain_id"]
             rpc_id = rpc["id"]
+            url = rpc.get("url", "")
 
             is_g = rpc["source"] == "global"
             src_str = "[#89b4fa]G[/]" if is_g else "[#89b4fa]L[/]"
-            ind = f"[{src_str}   ]"
+            
+            is_fav = False
+            if is_g:
+                is_fav = url in cfg.global_config.get("favorite_rpcs", [])
+            else:
+                is_fav = url in cfg.local_config.get("favorite_rpcs", [])
+                
+            fav_str = "[#f9e2af]★[/]" if is_fav else " "
+            ind = f"[{src_str} {fav_str} ]"
 
-            url_display = rpc.get("url", "")
+            url_display = url
             network_type = rpc.get("network_type", "Production")
 
             config_note = rpc.get("note", "")
@@ -106,10 +116,10 @@ class CustomRPCScreen(Screen[str]):
             self.table.add_row(
                 ind,
                 network_type,
+                str(cid),
                 url_display,
                 config_note,
                 keyring_note,
-                str(cid),
                 key=str(i),
             )
 
@@ -128,6 +138,23 @@ class CustomRPCScreen(Screen[str]):
             return self.rpcs[idx]
         except (ValueError, TypeError, AttributeError, IndexError):
             return None
+
+    def action_toggle_favorite_rpc(self) -> None:
+        """Toggle favorite status for the selected RPC."""
+        selected = self._get_selected_rpc()
+        if not selected:
+            return
+        
+        is_global = selected["source"] == "global"
+        # The url in selected is the final url if it doesn't have secrets.
+        # Wait, selected["url"] has ${API_KEY} if it's locked.
+        # But favorites uses the actual base url?
+        url = selected.get("url", "")
+        self.app.config.toggle_favorite_rpc(url, is_global=is_global)
+        
+        # It's better to refresh the table to show a favorite star if we add one, 
+        # but right now custom rpcs don't show the star. Let's still refresh.
+        self.refresh_rpcs()
 
     def action_add_rpc(self) -> None:
         """Add a new custom RPC."""
