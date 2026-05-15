@@ -12,6 +12,7 @@ A powerful TUI (Terminal User Interface) tool to search for EVM chains and manag
 -   **Favorites System**:
     *   **Project Level**: Store favorites in `.rpc-picker.toml` within your repository.
     *   **Global Level**: Store favorites in your global user config.
+    *   **Favorite RPCs**: Bookmark both public chains and your own custom RPCs to easily access and test them from a dedicated unified dashboard.
 -   **Filtering**: 
     *   Toggle between **Mainnet**, **Testnet**, or **All**.
     *   Quickly filter to show only your **Favorite** chains.
@@ -67,6 +68,7 @@ if rpc_url:
 | `Ctrl + R` | **Refresh** chain data from network |
 | `Ctrl + E` | **Use Current ETH_RPC_URL** (select current ENV and exit) |
 | `Ctrl + U` | **Personal RPC URLs** (manage and select custom endpoints) |
+| `Ctrl + B` | **Favorite RPCs** (view all bookmarked public and custom endpoints) |
 
 ### RPC Selection Screen
 | Key | Action |
@@ -85,6 +87,17 @@ if rpc_url:
 | `a` | **Add** custom RPC |
 | `e` | **Edit** highlighted RPC |
 | `Delete` | **Delete** highlighted RPC |
+| `Ctrl + V` | **Paste & Add** (paste URL from clipboard into Add RPC modal) |
+| `Ctrl + B` | **Toggle Favorite** (bookmark/unbookmark the selected custom RPC) |
+
+### Favorite RPCs Screen
+| Key | Action |
+|-----|--------|
+| `Enter` | **Select** RPC and exit |
+| `Esc` | **Back** to main screen |
+| `Ctrl + R` | **Refresh** latencies |
+| `Ctrl + L` | **Toggle Local Favorite** (Project level) |
+| `Ctrl + G` | **Toggle Global Favorite** (Global level) |
 
 ### Add/Edit Custom RPC Modal
 | Key | Action |
