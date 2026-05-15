@@ -130,8 +130,10 @@ class AddRPCModal(ModalScreen[dict]):
     def compose(self) -> ComposeResult:
         with Vertical(id="add-rpc-container"):
             title = "Edit RPC" if self.is_edit else "Add Custom RPC"
-            if self.chain_name and self.chain_id is not None:
-                yield Label(f"{title} - {self.chain_name} ({self.chain_id})", classes="modal-title")
+            display_name = self.initial_data.get("name") or self.chain_name
+            
+            if display_name and self.chain_id is not None:
+                yield Label(f"{title} - {display_name} ({self.chain_id})", classes="modal-title")
             else:
                 yield Label(title, classes="modal-title")
 
@@ -168,6 +170,9 @@ class AddRPCModal(ModalScreen[dict]):
             with Vertical(id="password-section", classes="hidden"):
                 yield Label("Password (required for encryption)", classes="field-label")
                 yield Input(placeholder="Password", password=True, id="password-input")
+
+            yield Label("Name", classes="field-label")
+            yield Input(self.initial_data.get("name", ""), placeholder="Custom RPC Name (Optional)", id="name-input")
 
             yield Label("Note @ config", classes="field-label")
             yield TextArea(self.initial_data.get("note", ""), id="note-input")
@@ -266,6 +271,7 @@ class AddRPCModal(ModalScreen[dict]):
 
         return {
             "chain_id": chain_id,
+            "name": self.query_one("#name-input", Input).value.strip(),
             "url": url,
             "network_type": self.query_one("#network-type-select", Select).value,
             "note": self.query_one("#note-input", TextArea).text,

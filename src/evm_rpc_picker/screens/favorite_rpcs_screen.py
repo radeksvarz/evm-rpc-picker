@@ -88,14 +88,16 @@ class FavoriteRPCScreen(Screen[str]):
         custom_rpcs_local = self.app.config.local_config.get("custom_rpcs", {})
         
         for cid_str, rpcs in custom_rpcs_global.items():
-            c_name = next((c.get("name", "Unknown") for c in chains if str(c.get("chainId")) == cid_str), f"Chain {cid_str}")
+            fallback_name = next((c.get("name", "Unknown") for c in chains if str(c.get("chainId")) == cid_str), f"Chain {cid_str}")
             for r in rpcs:
-                url_to_chain[r.get("url")] = c_name
+                # Custom name override
+                url_to_chain[r.get("url")] = r.get("name") or fallback_name
                 
         for cid_str, rpcs in custom_rpcs_local.items():
-            c_name = next((c.get("name", "Unknown") for c in chains if str(c.get("chainId")) == cid_str), f"Chain {cid_str}")
+            fallback_name = next((c.get("name", "Unknown") for c in chains if str(c.get("chainId")) == cid_str), f"Chain {cid_str}")
             for r in rpcs:
-                url_to_chain[r.get("url")] = c_name
+                # Custom name override
+                url_to_chain[r.get("url")] = r.get("name") or fallback_name
 
         self.rpc_details = {}
         for url in self.fav_urls:

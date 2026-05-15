@@ -178,6 +178,7 @@ class RPCScreen(Screen[str]):
             rpcs.append(
                 {
                     "id": rpc_id,
+                    "name": c.get("name", ""),
                     "url": final_url,
                     "display_url": display_url,
                     "tracking": "none",
@@ -302,6 +303,9 @@ class RPCScreen(Screen[str]):
                 new_index = i
 
             url_display = d.get("display_url", "")
+            if d.get("name"):
+                url_display = f"[{d['name']}] {url_display}"
+            
             if d.get("is_secret"):
                 url_display = f"🔒 {url_display}"
 

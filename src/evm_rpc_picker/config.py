@@ -224,6 +224,7 @@ class ConfigManager:
 
         entry = {
             "id": rpc_id,
+            "name": rpc_data.get("name", ""),
             "url": base_url if api_key else url,
             "note": rpc_data.get("note", ""),
             "network_type": rpc_data.get("network_type", "Production"),
@@ -282,6 +283,7 @@ class ConfigManager:
         # 2. Update public part
         entry = {
             "id": rpc_id,
+            "name": rpc_data.get("name", ""),
             "url": base_url if api_key else url,
             "note": rpc_data.get("note", ""),
             "network_type": rpc_data.get("network_type", "Production"),
