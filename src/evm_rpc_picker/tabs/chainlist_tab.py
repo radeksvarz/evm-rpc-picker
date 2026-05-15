@@ -272,7 +272,7 @@ class ChainlistTab(Static):
             idx = int(event.row_key.value)
             if 0 <= idx < len(self.filtered_chains):
                 chain = self.filtered_chains[idx]
-                self.app.push_screen(RPCScreen(chain), self.app.screen._on_rpc_selected) # type: ignore[attr-defined]
+                self.app.push_screen(RPCScreen(chain), self.app.screen._on_rpc_selected)  # type: ignore[attr-defined]
 
     def on_key(self, event: events.Key) -> None:
         search_input = self.query_one(SearchInput)

@@ -16,7 +16,7 @@ class RPCListItem(ListItem):
     .rpc-row-grid {
         layout: grid;
         grid-size: 3;
-        grid-columns: 1fr 5 12;
+        grid-columns: 1fr 10 12;
         height: 1;
     }
     .privacy-symbol {
@@ -53,15 +53,15 @@ class RPCListItem(ListItem):
 
     def compose(self) -> ComposeResult:
         """Compose the row with source tag, URL, privacy symbol and latency."""
-        # Final ASCII Privacy symbols with specific prefixes
+        # Final Privacy labels
         if self.tracking == "none":
-            privacy_symbol = "[green]#SEC[/green]"
+            privacy_symbol = "[green]Says OK[/green]"
         elif self.tracking == "yes":
-            privacy_symbol = "[red]!TRK[/red]"
+            privacy_symbol = "[red]Tracking[/red]"
         elif self.tracking == "limited":
-            privacy_symbol = "[yellow]~LIM[/yellow]"
+            privacy_symbol = "[yellow]Some[/yellow]"
         else:
-            privacy_symbol = "[dim]?UNK[/dim]"
+            privacy_symbol = "[dim]Unknown[/dim]"
 
         with Container(classes="rpc-row-grid"):
             source_tag = ""

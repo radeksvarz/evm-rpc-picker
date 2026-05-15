@@ -339,45 +339,53 @@ class ConfigManager:
             doc.add(tomlkit.nl())
 
             for key, value in data.items():
-                if key == "schema_version":
-                    doc.add(
-                        tomlkit.comment(
-                            f"Config schema version (current: {self.CURRENT_SCHEMA_VERSION})"
-                        )
-                    )
-                    doc.add(key, value)
-                    doc.add(tomlkit.nl())
-                elif key == "favorite_chains":
-                    doc.add(tomlkit.comment("List of Chain IDs for pinned networks"))
-                    doc.add(key, value)
-                    doc.add(tomlkit.nl())
-                elif key == "favorite_rpcs":
-                    doc.add(tomlkit.comment("List of favorite RPC URLs"))
-                    doc.add(key, value)
-                    doc.add(tomlkit.nl())
-                elif key == "custom_rpcs":
-                    doc.add(tomlkit.comment("Custom RPC endpoints"))
-                    rpc_table = tomlkit.table()
-                    for chain_id_str, rpcs in value.items():
-                        aot = tomlkit.aot()
-                        for rpc in rpcs:
-                            t = tomlkit.table()
-                            t.indent(2)
-                            for k, v in rpc.items():
-                                if isinstance(v, str) and "\n" in v:
-                                    t.add(k, tomlkit.string(v, multiline=True))
-                                else:
-                                    t.add(k, v)
-                            aot.append(t)
-                        rpc_table.add(chain_id_str, aot)
-                    doc.add(key, rpc_table)
-                    doc.add(tomlkit.nl())
-                else:
-                    doc.add(key, value)
+                self._add_key_to_toml_doc(doc, key, value)
 
             path.write_text(tomlkit.dumps(doc))
         except Exception:
             pass
+
+    def _add_key_to_toml_doc(self, doc: tomlkit.TOMLDocument, key: str, value: Any) -> None:
+        """Add a single key-value pair to the TOML document with appropriate comments."""
+        if key == "schema_version":
+            doc.add(
+                tomlkit.comment(f"Config schema version (current: {self.CURRENT_SCHEMA_VERSION})")
+            )
+            doc.add(key, value)
+            doc.add(tomlkit.nl())
+        elif key == "favorite_chains":
+            doc.add(tomlkit.comment("List of Chain IDs for pinned networks"))
+            doc.add(key, value)
+            doc.add(tomlkit.nl())
+        elif key == "favorite_rpcs":
+            doc.add(tomlkit.comment("List of favorite RPC URLs"))
+            doc.add(key, value)
+            doc.add(tomlkit.nl())
+        elif key == "custom_rpcs":
+            doc.add(tomlkit.comment("Custom RPC endpoints"))
+            doc.add(key, self._build_custom_rpcs_table(value))
+            doc.add(tomlkit.nl())
+        else:
+            doc.add(key, value)
+
+    def _build_custom_rpcs_table(
+        self, custom_rpcs: dict[str, list[dict[str, Any]]]
+    ) -> tomlkit.items.Table:
+        """Build a TOML table for custom RPCs."""
+        rpc_table = tomlkit.table()
+        for chain_id_str, rpcs in custom_rpcs.items():
+            aot = tomlkit.aot()
+            for rpc in rpcs:
+                t = tomlkit.table()
+                t.indent(2)
+                for k, v in rpc.items():
+                    if isinstance(v, str) and "\n" in v:
+                        t.add(k, tomlkit.string(v, multiline=True))
+                    else:
+                        t.add(k, v)
+                aot.append(t)
+            rpc_table.add(chain_id_str, aot)
+        return rpc_table
 
     def local_config_exists(self) -> bool:
         """Check if local config file exists in CWD."""

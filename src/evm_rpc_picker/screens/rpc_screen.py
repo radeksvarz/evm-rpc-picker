@@ -301,54 +301,10 @@ class RPCScreen(Screen[str]):
             if selected_url and url == selected_url:
                 new_index = i
 
-            url_display = d.get("display_url", "")
-            if d.get("name"):
-                url_display = f"[{d['name']}] {url_display}"
-
-            if d.get("is_secret"):
-                url_display = f"🔒 {url_display}"
-
-            # Flags: G (Global Fav), L (Local Fav), F (Foundry), H (Hardhat)
-            # Match behavior of MainScreen
-            is_fav_g = url in fav_global_urls
-            is_fav_l = url in fav_local_urls
-
-            source = d.get("source", "")
-            is_f = source == "foundry"
-            is_h = source == "hardhat"
-            # Note: custom RPCs sources are "global" or "project" (which we treat as L)
-            # If an RPC is a global custom RPC, it's basically a global favorite
-            if source == "global":
-                is_fav_g = True
-            if source == "project":
-                is_fav_l = True
-
-            if any([is_fav_g, is_fav_l, is_f, is_h]):
-                g_str = "[#89b4fa]G[/]" if is_fav_g else " "
-                l_str = "[#89b4fa]L[/]" if is_fav_l else " "
-                f_str = "[#89b4fa]F[/]" if is_f else " "
-                h_str = "[#89b4fa]H[/]" if is_h else " "
-                indicator = f"[{g_str}{l_str}{f_str}{h_str}]"
-            else:
-                indicator = ""
-
-            tracking_map = {
-                "none": "[#a6e3a1]None[/]",
-                "limited": "[#f9e2af]Limited[/]",
-                "tracking": "[#f38ba8]Tracking[/]",
-                "unspecified": "[#6c7086]Unknown[/]",
-            }
-            tracking_str = tracking_map.get(d.get("tracking", ""), str(d.get("tracking", "")))
-
-            latency = d.get("latency")
-            if latency is None:
-                lat_str = "[#f38ba8]ERR[/]"
-            elif latency < 150:
-                lat_str = f"[#a6e3a1]{latency:.0f} ms[/]"
-            elif latency < 400:
-                lat_str = f"[#f9e2af]{latency:.0f} ms[/]"
-            else:
-                lat_str = f"[#f38ba8]{latency:.0f} ms[/]"
+            url_display = self._format_url_display(d)
+            indicator = self._get_rpc_indicator(d, fav_global_urls, fav_local_urls)
+            tracking_str = self._get_tracking_label(d)
+            lat_str = self._get_latency_label(d.get("latency"))
 
             table.add_row(indicator, url_display, tracking_str, lat_str, key=str(i))
 
@@ -356,6 +312,56 @@ class RPCScreen(Screen[str]):
         if table.row_count > 0:
             table.move_cursor(row=new_index)
             table.focus()
+
+    def _format_url_display(self, d: dict[str, Any]) -> str:
+        url_display = str(d.get("display_url", ""))
+        if d.get("name"):
+            url_display = f"[{d['name']}] {url_display}"
+        if d.get("is_secret"):
+            url_display = f"🔒 {url_display}"
+        return url_display
+
+    def _get_rpc_indicator(
+        self, d: dict[str, Any], fav_g_urls: list[str], fav_l_urls: list[str]
+    ) -> str:
+        url = d.get("url", "")
+        is_fav_g = url in fav_g_urls
+        is_fav_l = url in fav_l_urls
+        source = d.get("source", "")
+        is_f = source == "foundry"
+        is_h = source == "hardhat"
+
+        if source == "global":
+            is_fav_g = True
+        if source == "project":
+            is_fav_l = True
+
+        if any([is_fav_g, is_fav_l, is_f, is_h]):
+            g_str = "[#89b4fa]G[/]" if is_fav_g else " "
+            l_str = "[#89b4fa]L[/]" if is_fav_l else " "
+            f_str = "[#89b4fa]F[/]" if is_f else " "
+            h_str = "[#89b4fa]H[/]" if is_h else " "
+            return f"[{g_str}{l_str}{f_str}{h_str}]"
+        return ""
+
+    def _get_tracking_label(self, d: dict[str, Any]) -> str:
+        tracking_map = {
+            "none": "[#a6e3a1]Says OK[/]",
+            "limited": "[#f9e2af]Some[/]",
+            "yes": "[#f38ba8]Tracking[/]",
+            "unspecified": "[#6c7086]Unknown[/]",
+        }
+        val = str(d.get("tracking", ""))
+        return tracking_map.get(val, val)
+
+    def _get_latency_label(self, latency: float | None) -> str:
+        if latency is None:
+            return "[#f38ba8]ERR[/]"
+        if latency < 150:
+            return f"[#a6e3a1]{latency:.0f} ms[/]"
+        if latency < 400:
+            return f"[#f9e2af]{latency:.0f} ms[/]"
+        return f"[#f38ba8]{latency:.0f} ms[/]"
 
     async def ping_rpc(self, client: httpx.AsyncClient, item: dict[str, Any]) -> None:
         url = item.get("actual_url", "")

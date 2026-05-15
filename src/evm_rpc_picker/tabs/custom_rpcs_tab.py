@@ -138,20 +138,21 @@ class CustomRPCTab(Static):
     def action_paste_add_rpc(self) -> None:
         clipboard = ""
         import shutil
+
         wl_paste = shutil.which("wl-paste")
         xclip = shutil.which("xclip")
 
         # Try Wayland
         if wl_paste:
             with contextlib.suppress(Exception):
-                clipboard = subprocess.check_output(
+                clipboard = subprocess.check_output(  # noqa: S603
                     [wl_paste], text=True, stderr=subprocess.DEVNULL
                 ).strip()
 
         # If Wayland fails or empty, try X11
         if not clipboard and xclip:
             with contextlib.suppress(Exception):
-                clipboard = subprocess.check_output(
+                clipboard = subprocess.check_output(  # noqa: S603
                     [xclip, "-selection", "clipboard", "-o"],
                     text=True,
                     stderr=subprocess.DEVNULL,
