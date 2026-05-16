@@ -70,7 +70,7 @@ if rpc_url:
 | `Ctrl + U` | **Personal RPC URLs** (manage and select custom endpoints) |
 | `Ctrl + B` | **Favorite RPCs** (view all bookmarked public and custom endpoints) |
 
-### RPC Selection Screen
+### Chainlist.org chain's RPC Selection Screen
 | Key | Action |
 |-----|--------|
 | `Enter` | **Select** RPC and exit |

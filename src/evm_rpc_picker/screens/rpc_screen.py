@@ -22,18 +22,7 @@ class RPCTable(DataTable):
     BINDINGS = [
         Binding("home", "cursor_top", "Top", show=False),
         Binding("end", "cursor_bottom", "Bottom", show=False),
-        Binding(
-            "ctrl+l",
-            "screen.toggle_favorite",
-            "Fav (Local)",
-            tooltip="Add/remove from local project favorites",
-        ),
-        Binding(
-            "ctrl+g",
-            "screen.toggle_global_favorite",
-            "Fav (Global)",
-            tooltip="Add/remove from global favorites",
-        ),
+        Binding("enter", "submit", "Select RPC"),
     ]
 
     def action_cursor_top(self) -> None:
@@ -48,7 +37,12 @@ class RPCTable(DataTable):
 class RPCScreen(Screen[str]):
     """Screen to select RPC and check latency."""
 
-    app: "ChainRPCPicker"
+    @property
+    def picker_app(self) -> "ChainRPCPicker":
+        """Typed access to the main app instance."""
+        from typing import cast
+
+        return cast("ChainRPCPicker", self.app)
 
     DEFAULT_CSS = """
     RPCScreen {
@@ -79,6 +73,7 @@ class RPCScreen(Screen[str]):
     """
 
     BINDINGS = [
+        Binding("enter", "submit", "Select RPC", tooltip="Select the highlighted RPC"),
         Binding("escape", "dismiss(None)", "Back"),
         Binding("ctrl+r", "retry", "Retest"),
         Binding(
@@ -93,7 +88,6 @@ class RPCScreen(Screen[str]):
             "Fav (Global)",
             tooltip="Add/remove from global favorites",
         ),
-        Binding("enter", "submit", "Select RPC", tooltip="Select the highlighted RPC"),
     ]
 
     def __init__(self, chain: dict[str, Any]):
@@ -145,7 +139,7 @@ class RPCScreen(Screen[str]):
 
     def _gather_custom_rpcs(self) -> list[dict[str, Any]]:
         rpcs: list[dict[str, Any]] = []
-        cm = self.app.config
+        cm = self.picker_app.config
         cid = self.chain.get("chainId")
         if cid is None:
             return rpcs
@@ -237,7 +231,7 @@ class RPCScreen(Screen[str]):
         table = self.query_one(DataTable)
         table.clear()
         table.loading = True
-        self.app.notify("Latency testing RPC endpoints...", title="Testing RPCs")
+        self.picker_app.notify("Latency testing RPC endpoints...", title="Testing RPCs")
 
         items_to_ping = []
         for r in self.rpc_data:
@@ -257,6 +251,11 @@ class RPCScreen(Screen[str]):
         self.rpc_data_with_latency = items
         self.update_table()
 
+    def _on_url_ready(self, url: str) -> None:
+        # We need to call the callback that MainScreen expects
+        if hasattr(self.picker_app.screen, "_on_rpc_selected"):
+            self.picker_app.screen._on_rpc_selected(url)
+
     def update_table(self) -> None:
         """Sort and render the RPC table based on current data."""
         if not hasattr(self, "rpc_data_with_latency"):
@@ -273,8 +272,8 @@ class RPCScreen(Screen[str]):
         items = self.rpc_data_with_latency
 
         # Get favorites for sorting
-        fav_global = self.app.config.get_favorite_rpcs(project_only=False)
-        fav_local = self.app.config.get_favorite_rpcs(project_only=True)
+        fav_global = self.picker_app.config.get_favorite_rpcs(project_only=False)
+        fav_local = self.picker_app.config.get_favorite_rpcs(project_only=True)
 
         # Sort by favorite status then latency (None at the end)
         def sort_key(x: dict[str, Any]) -> tuple[int, bool, float]:
@@ -292,8 +291,8 @@ class RPCScreen(Screen[str]):
 
         table.clear()
 
-        fav_global_urls = self.app.config.global_config.get("favorite_rpcs", [])
-        fav_local_urls = self.app.config.local_config.get("favorite_rpcs", [])
+        fav_global_urls = self.picker_app.config.global_config.get("favorite_rpcs", [])
+        fav_local_urls = self.picker_app.config.local_config.get("favorite_rpcs", [])
 
         new_index = 0
         for i, d in enumerate(self.current_sorted_rpcs):
@@ -414,7 +413,9 @@ class RPCScreen(Screen[str]):
             return
 
         if item.get("needs_password"):
-            self.app.push_screen(PasswordModal(), lambda p: self._on_password_provided(item, p))
+            self.picker_app.push_screen(
+                PasswordModal(), lambda p: self._on_password_provided(item, p)
+            )
         else:
             url = item.get("actual_url", "")
             self.dismiss(url)
@@ -423,7 +424,7 @@ class RPCScreen(Screen[str]):
         if not password:
             return
 
-        cm = self.app.config
+        cm = self.picker_app.config
         rpc_id = item.get("id")
         if not rpc_id:
             return
@@ -436,9 +437,9 @@ class RPCScreen(Screen[str]):
             final_url = url.replace("********", key)
             self.dismiss(final_url)
         elif secret_data.get("status") == "wrong_password":
-            self.app.notify("Wrong password", severity="error")
+            self.picker_app.notify("Wrong password", severity="error")
         else:
-            self.app.notify("Error loading secret", severity="error")
+            self.picker_app.notify("Error loading secret", severity="error")
 
     def action_toggle_favorite(self) -> None:
         """Toggle favorite for the selected RPC (local)."""
@@ -446,7 +447,7 @@ class RPCScreen(Screen[str]):
         if selected:
             url = selected.get("url")
             if url:
-                self.app.config.toggle_favorite_rpc(url, is_global=False)
+                self.picker_app.config.toggle_favorite_rpc(url, is_global=False)
                 self.update_table()
 
     def action_toggle_global_favorite(self) -> None:
@@ -455,5 +456,5 @@ class RPCScreen(Screen[str]):
         if selected:
             url = selected.get("url")
             if url:
-                self.app.config.toggle_favorite_rpc(url, is_global=True)
+                self.picker_app.config.toggle_favorite_rpc(url, is_global=True)
                 self.update_table()
