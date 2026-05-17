@@ -258,6 +258,8 @@ class RPCScreen(Screen[str]):
 
     def update_table(self) -> None:
         """Sort and render the RPC table based on current data."""
+        if not self.is_attached:
+            return
         if not hasattr(self, "rpc_data_with_latency"):
             return
 

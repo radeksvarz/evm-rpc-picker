@@ -33,6 +33,12 @@ class FavoriteRPCTab(Static):
 
     app: "ChainRPCPicker"
 
+    BINDINGS = [
+        Binding("ctrl+r", "refresh_latency", "Refresh", show=True),
+        Binding("ctrl+l", "toggle_local_fav", "Fav (Local)", show=True),
+        Binding("ctrl+g", "toggle_global_fav", "Fav (Global)", show=True),
+    ]
+
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.fav_urls: list[str] = []
@@ -88,6 +94,8 @@ class FavoriteRPCTab(Static):
         self.refresh_latency()
 
     def update_table(self) -> None:
+        if not self.is_attached:
+            return
         selected_url = self._get_selected_rpc_url()
         self.table.clear()
 
@@ -127,6 +135,10 @@ class FavoriteRPCTab(Static):
             return str(row_key.value)
         except Exception:
             return None
+
+    def action_refresh_latency(self) -> None:
+        """Action wrapper to refresh latency."""
+        self.refresh_latency()
 
     @work(exclusive=True, thread=True)
     def refresh_latency(self) -> None:

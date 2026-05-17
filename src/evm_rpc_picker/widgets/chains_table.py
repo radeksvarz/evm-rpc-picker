@@ -12,13 +12,13 @@ class ChainsTable(DataTable):
         Binding("escape", "app.quit", "Cancel", tooltip="Quit the RPC picker"),
         Binding(
             "ctrl+l",
-            "screen.toggle_favorite",
+            "toggle_favorite",
             "Fav (Local)",
             tooltip="Add/remove from local project favorites",
         ),  # noqa: E501
         Binding(
             "ctrl+g",
-            "screen.toggle_global_favorite",
+            "toggle_global_favorite",
             "Fav (Global)",
             tooltip="Add/remove from global favorites",
         ),  # noqa: E501

@@ -34,6 +34,14 @@ class CustomRPCTab(Static):
 
     app: "ChainRPCPicker"
 
+    BINDINGS = [
+        Binding("a", "add_rpc", "Add RPC", show=True),
+        Binding("e", "edit_rpc", "Edit RPC", show=True),
+        Binding("delete", "delete_rpc", "Delete RPC", show=True),
+        Binding("ctrl+v", "paste_add_rpc", "Paste & Add", show=True),
+        Binding("ctrl+b", "toggle_favorite_rpc", "Toggle Favorite", show=True),
+    ]
+
     def compose(self) -> ComposeResult:
         self.table = CustomRPCTable(id="custom-rpcs-table", cursor_type="row")
         yield self.table

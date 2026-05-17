@@ -33,15 +33,10 @@ class MainScreen(Screen[str]):
 
     BINDINGS = [
         Binding("escape", "app.quit", "Cancel", tooltip="Quit the RPC picker"),
-        Binding("ctrl+n", "switch_tab('tab-chainlist')", "Chainlist.org", show=False),
-        Binding("ctrl+u", "switch_tab('tab-personal')", "Personal RPC URLs", show=False),
-        Binding("ctrl+b", "switch_tab('tab-favorites')", "Favorite RPCs", show=False),
-        # Delegated bindings (processed by active tab if it has the method)
-        Binding(
-            "ctrl+f", "delegate_to_tab('action_toggle_filter_favs')", "Favorites only", show=False
-        ),
-        Binding("ctrl+t", "delegate_to_tab('action_toggle_filter_type')", "Chain Type", show=False),
-        Binding("ctrl+r", "refresh_all_data", "Refresh Data", show=False),
+        Binding("ctrl+n", "switch_tab('tab-chainlist')", "Chainlist.org Tab", show=False),
+        Binding("ctrl+u", "switch_tab('tab-personal')", "Personal RPC URLs Tab", show=False),
+        Binding("ctrl+b", "switch_tab('tab-favorites')", "Favorite RPCs Tab", show=False),
+        Binding("ctrl+r", "refresh_all_data", "Refresh Data", tooltip="from Chainlist.org", show=False),
         Binding("ctrl+e", "use_current_env", "Use Current ETH_RPC_URL", show=False),
     ]
 

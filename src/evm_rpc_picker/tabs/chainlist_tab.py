@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any
 
 from textual import events, on
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Container, Horizontal
 from textual.widgets import DataTable, Label, Static
 
@@ -18,6 +19,11 @@ class ChainlistTab(Static):
     """View displaying the searchable list of chains from chainlist.org."""
 
     app: "ChainRPCPicker"
+
+    BINDINGS = [
+        Binding("ctrl+f", "toggle_filter_favs", "Favorite chains", show=True),
+        Binding("ctrl+t", "toggle_filter_type", "Chain Type", show=True),
+    ]
 
     DEFAULT_CSS = """
     ChainlistTab {
