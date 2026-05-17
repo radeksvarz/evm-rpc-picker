@@ -1,5 +1,6 @@
 import json
 import time
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any, cast
 
@@ -39,7 +40,17 @@ class ConfigManager:
         if path.exists():
             try:
                 # Use tomlkit to preserve structure/comments for later
-                return dict(tomlkit.parse(path.read_text()))
+                parsed = cast(dict[str, Any], dict(tomlkit.parse(path.read_text())))
+                if "favorites" in parsed:
+                    favs = parsed["favorites"]
+                    if isinstance(favs, dict):
+                        if "favorite_chains" in favs:
+                            parsed["favorite_chains"] = list(
+                                cast(Iterable[Any], favs["favorite_chains"])
+                            )
+                        if "favorite_rpcs" in favs:
+                            parsed["favorite_rpcs"] = [str(x) for x in favs["favorite_rpcs"]]
+                return parsed
             except Exception:
                 return {}
         return {}
@@ -387,7 +398,7 @@ class ConfigManager:
         self.delete_secret(rpc_id)
 
     def _save_toml(self, path: Path, data: dict[str, Any], is_global: bool = False) -> None:
-        """Save configuration to a TOML file with comments."""
+        """Save configuration to a TOML file with comments and precise ordering."""
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
             doc = tomlkit.document()
@@ -396,35 +407,61 @@ class ConfigManager:
             doc.add(tomlkit.comment("This file stores favorites and custom RPCs."))
             doc.add(tomlkit.nl())
 
-            for key, value in data.items():
-                self._add_key_to_toml_doc(doc, key, value)
+            # 1. schema_version is part of the header of the file (just below header comments)
+            doc.add(
+                tomlkit.comment(f"Config schema version (current: {self.CURRENT_SCHEMA_VERSION})")
+            )
+            doc.add("schema_version", data.get("schema_version", self.CURRENT_SCHEMA_VERSION))
+            doc.add(tomlkit.nl())
+
+            # 2. [favorites] section
+            fav_table = tomlkit.table()
+
+            # 2.1 favorite_chains
+            fav_table.add(tomlkit.comment("List of Chain IDs for pinned networks"))
+            chains = data.get("favorite_chains", [])
+            chains_arr = tomlkit.array()
+            for chain in chains:
+                chains_arr.append(chain)
+            if len(chains) > 0:
+                chains_arr.multiline(True)
+            fav_table.add("favorite_chains", chains_arr)
+            fav_table.add(tomlkit.nl())
+
+            # 2.2 favorite_rpcs
+            fav_table.add(tomlkit.comment("List of favorite RPC URLs"))
+            rpcs = data.get("favorite_rpcs", [])
+            rpcs_arr = tomlkit.array()
+            for rpc in rpcs:
+                rpcs_arr.append(rpc)
+            if len(rpcs) > 0:
+                rpcs_arr.multiline(True)
+            fav_table.add("favorite_rpcs", rpcs_arr)
+
+            doc.add("favorites", fav_table)
+            doc.add(tomlkit.nl())
+
+            # 3. custom_rpcs sections
+            custom_rpcs = data.get("custom_rpcs", {})
+            if custom_rpcs:
+                doc.add(tomlkit.comment("Custom RPC endpoints"))
+                doc.add("custom_rpcs", self._build_custom_rpcs_table(custom_rpcs))
+                doc.add(tomlkit.nl())
+
+            # Write other custom/unexpected root keys (if any)
+            for k, v in data.items():
+                if k not in (
+                    "schema_version",
+                    "favorite_chains",
+                    "favorite_rpcs",
+                    "custom_rpcs",
+                    "favorites",
+                ):
+                    doc.add(k, v)
 
             path.write_text(tomlkit.dumps(doc))
         except Exception:
             pass
-
-    def _add_key_to_toml_doc(self, doc: tomlkit.TOMLDocument, key: str, value: Any) -> None:
-        """Add a single key-value pair to the TOML document with appropriate comments."""
-        if key == "schema_version":
-            doc.add(
-                tomlkit.comment(f"Config schema version (current: {self.CURRENT_SCHEMA_VERSION})")
-            )
-            doc.add(key, value)
-            doc.add(tomlkit.nl())
-        elif key == "favorite_chains":
-            doc.add(tomlkit.comment("List of Chain IDs for pinned networks"))
-            doc.add(key, value)
-            doc.add(tomlkit.nl())
-        elif key == "favorite_rpcs":
-            doc.add(tomlkit.comment("List of favorite RPC URLs"))
-            doc.add(key, value)
-            doc.add(tomlkit.nl())
-        elif key == "custom_rpcs":
-            doc.add(tomlkit.comment("Custom RPC endpoints"))
-            doc.add(key, self._build_custom_rpcs_table(value))
-            doc.add(tomlkit.nl())
-        else:
-            doc.add(key, value)
 
     def _build_custom_rpcs_table(
         self, custom_rpcs: dict[str, list[dict[str, Any]]]
