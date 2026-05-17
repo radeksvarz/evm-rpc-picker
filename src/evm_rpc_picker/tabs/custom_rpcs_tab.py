@@ -52,9 +52,9 @@ class CustomRPCTab(Static):
         )
         self.refresh_rpcs()
 
-    def refresh_rpcs(self) -> None:
+    def refresh_rpcs(self, highlight_rpc_id: str | None = None) -> None:
         self._load_rpcs()
-        self._render_rpcs()
+        self._render_rpcs(highlight_rpc_id=highlight_rpc_id)
 
     def _load_rpcs(self) -> None:
         self.rpcs = []
@@ -80,13 +80,17 @@ class CustomRPCTab(Static):
 
         self.rpcs.sort(key=lambda x: x["chain_id"])
 
-    def _render_rpcs(self) -> None:
+    def _render_rpcs(self, highlight_rpc_id: str | None = None) -> None:
         self.table.clear()
         cfg = self.app.config
 
+        new_row = 0
         for i, rpc in enumerate(self.rpcs):
             cid = rpc["chain_id"]
             rpc_id = rpc["id"]
+            if highlight_rpc_id == rpc_id:
+                new_row = i
+
             url = rpc.get("url", "").strip()
             is_g = rpc["source"] == "global"
             src_str = "[#89b4fa]G[/]" if is_g else "[#89b4fa]L[/]"
@@ -129,6 +133,7 @@ class CustomRPCTab(Static):
 
         if self.table.row_count > 0:
             self.table.focus()
+            self.table.move_cursor(row=new_row)
 
     def _get_selected_rpc(self) -> dict[str, Any] | None:
         if not self.table.row_count:
@@ -189,11 +194,11 @@ class CustomRPCTab(Static):
                 return
             chain_id = data.pop("chain_id")
             is_global = data.pop("is_global", False)
-            self.app.config.add_custom_rpc(
+            rpc_id = self.app.config.add_custom_rpc(
                 chain_id, data, is_global=is_global, password=data.get("password")
             )
             self.app.notify("Custom RPC added", title="Success")
-            self.refresh_rpcs()
+            self.refresh_rpcs(highlight_rpc_id=rpc_id)
 
         self.app.push_screen(AddRPCModal(initial_data=initial_data), check_add)
 

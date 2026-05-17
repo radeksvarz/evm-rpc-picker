@@ -257,7 +257,7 @@ class ConfigManager:
         rpc_data: dict[str, Any],
         is_global: bool = False,
         password: str | None = None,
-    ) -> None:
+    ) -> str:
         """Add a custom RPC to the specified config, handling secrets."""
         config = self.global_config if is_global else self.local_config
 
@@ -306,6 +306,8 @@ class ConfigManager:
         else:
             self._save_toml(self.LOCAL_CONFIG_FILE, config, is_global=False)
             self.local_config = config
+
+        return rpc_id
 
     def update_custom_rpc(
         self,
