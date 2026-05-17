@@ -113,6 +113,23 @@ if rpc_url:
 -   **Project Config**: `.rpc-picker.toml` in your project root.
 -   **Cache**: Data from `chainlist.org` is cached for 24 hours in `~/.cache/evm-rpc-picker/chains.json`.
 
+## Secure storage
+
+### Security and Encryption
+
+- All sensitive data (API keys, Secret Notes) are stored in the system keyring (macOS Keychain, Windows Vault, Linux Secret Service).
+- Each custom RPC can optionally have its own password for **additional encryption within the keyring** (AES). Indicated by `rpc_password_protected` flag in config and lock icon `[🔒]` in front of URL.
+- `Config Note` (Public): Saved in TOML config files, not encrypted, portable between machines: `note` config field.
+- `Keyring Note` (Private): Saved in the encrypted system keyring.
+- If the keyring is unlocked, the app automatically measures latency even for private RPCs.
+- API keys must never be stored in plain text within configuration TOML files (use placeholder `{{secret:key-name}}`).
+
+### Detailed Screen (Personal RPCs)
+
+- Lock icon `[🔒]` in front of URL indicates password-protected RPCs (API parts in keyring).
+- If RPC is password-protected, the app prompts for the password when you select or edit it.
+- `[🔒] Locked` label in Keyring Note indicates that there is some note in the keyring, but the keyring is locked.
+
 ## Development
 
 ```bash

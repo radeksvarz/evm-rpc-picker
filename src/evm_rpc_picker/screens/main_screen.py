@@ -36,7 +36,13 @@ class MainScreen(Screen[str]):
         Binding("ctrl+n", "switch_tab('tab-chainlist')", "Chainlist.org Tab", show=False),
         Binding("ctrl+u", "switch_tab('tab-personal')", "Personal RPC URLs Tab", show=False),
         Binding("ctrl+b", "switch_tab('tab-favorites')", "Favorite RPCs Tab", show=False),
-        Binding("ctrl+r", "refresh_all_data", "Refresh Data", tooltip="from Chainlist.org", show=False),
+        Binding(
+            "ctrl+r",
+            "refresh_all_data",
+            "Refresh Data",
+            tooltip="from Chainlist.org",
+            show=False,
+        ),
         Binding("ctrl+e", "use_current_env", "Use Current ETH_RPC_URL", show=False),
     ]
 

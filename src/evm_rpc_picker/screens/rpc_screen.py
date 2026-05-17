@@ -318,7 +318,9 @@ class RPCScreen(Screen[str]):
         url_display = str(d.get("display_url", ""))
         if d.get("name"):
             url_display = f"[{d['name']}] {url_display}"
-        if d.get("is_secret"):
+        if d.get("encrypted"):
+            url_display = f"🔑🔒 {url_display}"
+        elif d.get("is_secret"):
             url_display = f"🔒 {url_display}"
         return url_display
 

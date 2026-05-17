@@ -1,6 +1,6 @@
 import contextlib
 import subprocess
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from textual import on
 from textual.app import ComposeResult
@@ -53,9 +53,11 @@ class CustomRPCTab(Static):
         self.refresh_rpcs()
 
     def refresh_rpcs(self) -> None:
-        self.table.clear()
-        self.rpcs: list[dict[str, Any]] = []
+        self._load_rpcs()
+        self._render_rpcs()
 
+    def _load_rpcs(self) -> None:
+        self.rpcs = []
         cfg = self.app.config
 
         # Load local
@@ -78,6 +80,10 @@ class CustomRPCTab(Static):
 
         self.rpcs.sort(key=lambda x: x["chain_id"])
 
+    def _render_rpcs(self) -> None:
+        self.table.clear()
+        cfg = self.app.config
+
         for i, rpc in enumerate(self.rpcs):
             cid = rpc["chain_id"]
             rpc_id = rpc["id"]
@@ -99,11 +105,15 @@ class CustomRPCTab(Static):
             config_note = rpc.get("note", "")
             keyring_note = ""
 
-            if rpc.get("has_secrets"):
+            if rpc.get("encrypted"):
+                url_display = f"🔑🔒 {url_display}"
+            elif rpc.get("has_secrets"):
                 url_display = f"🔒 {url_display}"
+
+            if rpc.get("has_secrets"):
                 secret_data = cfg.load_rpc_secret(rpc_id)
                 if secret_data.get("status") == "needs_password":
-                    keyring_note = "[#f38ba8]🔒 Locked[/]"
+                    keyring_note = "[#f38ba8]🔑🔒 Locked[/]"
                 else:
                     keyring_note = secret_data.get("secret_note", "")
 
@@ -128,7 +138,7 @@ class CustomRPCTab(Static):
         try:
             row_key = self.table.coordinate_to_cell_key(self.table.cursor_coordinate).row_key
             idx = int(str(row_key.value))
-            return self.rpcs[idx]
+            return cast(dict[str, Any], self.rpcs[idx])
         except (ValueError, TypeError, AttributeError, IndexError):
             return None
 
