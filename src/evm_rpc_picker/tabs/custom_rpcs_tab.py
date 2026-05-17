@@ -260,7 +260,7 @@ class CustomRPCTab(Static):
                 data.pop("chain_id")
             self.app.config.update_custom_rpc(chain_id, rpc_id, data, is_global=is_global)
             self.app.notify("Custom RPC updated", title="Success")
-            self.refresh_rpcs()
+            self.refresh_rpcs(highlight_rpc_id=rpc_id)
 
         from ..models import get_cached_chains
 
