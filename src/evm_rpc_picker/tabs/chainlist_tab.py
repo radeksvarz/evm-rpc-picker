@@ -23,6 +23,8 @@ class ChainlistTab(Static):
     BINDINGS = [
         Binding("ctrl+f", "toggle_filter_favs", "Favorite chains", show=True),
         Binding("ctrl+t", "toggle_filter_type", "Chain Type", show=True),
+        Binding("ctrl+l", "toggle_favorite", "Fav (Local)", show=True),
+        Binding("ctrl+g", "toggle_global_favorite", "Fav (Global)", show=True),
     ]
 
     DEFAULT_CSS = """
@@ -132,28 +134,38 @@ class ChainlistTab(Static):
 
     def action_toggle_favorite(self) -> None:
         table = self.query_one(ChainsTable)
-        if table.cursor_row is not None and 0 <= table.cursor_row < len(self.filtered_chains):
-            chain = self.filtered_chains[table.cursor_row]
-            chain_id = chain.get("chainId")
-            if chain_id is None:
-                return
+        try:
+            row_key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
+            idx = int(str(row_key.value))
+        except (ValueError, TypeError, AttributeError):
+            return
 
-            self.app.config.toggle_favorite(int(chain_id), is_global=False)
-            self.refresh_table()
+        if 0 <= idx < len(self.filtered_chains):
+            chain = self.filtered_chains[idx]
+            chain_id = chain.get("chainId")
+            if chain_id is not None:
+                self.app.config.toggle_favorite(int(chain_id), is_global=False)
+                self.refresh_table(toggled_chain_id=int(chain_id))
 
     def action_toggle_global_favorite(self) -> None:
         table = self.query_one(ChainsTable)
-        if table.cursor_row is not None and 0 <= table.cursor_row < len(self.filtered_chains):
-            chain = self.filtered_chains[table.cursor_row]
+        try:
+            row_key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
+            idx = int(str(row_key.value))
+        except (ValueError, TypeError, AttributeError):
+            return
+
+        if 0 <= idx < len(self.filtered_chains):
+            chain = self.filtered_chains[idx]
             chain_id = chain.get("chainId")
             if chain_id is not None:
                 self.app.config.toggle_favorite(int(chain_id), is_global=True)
-                self.refresh_table()
+                self.refresh_table(toggled_chain_id=int(chain_id))
 
-    def refresh_table(self) -> None:
+    def refresh_table(self, toggled_chain_id: int | None = None) -> None:
         """Trigger search update to refresh table contents and indicators."""
         self.query_one(ContextBar).update_status()
-        self.apply_filter()
+        self.apply_filter(toggled_chain_id=toggled_chain_id)
 
     async def refresh_data(self) -> None:
         """Force refresh data from chainlist.org."""
@@ -234,7 +246,7 @@ class ChainlistTab(Static):
                 key=str(i),
             )
 
-    def apply_filter(self) -> None:
+    def apply_filter(self, toggled_chain_id: int | None = None) -> None:
         query = self.query_one("#search-input", SearchInput).value.lower()
         filtered = self.chains
 
@@ -269,8 +281,18 @@ class ChainlistTab(Static):
         self.update_table(filtered)
 
         table = self.query_one(ChainsTable)
-        if filtered and (table.cursor_row is None or table.cursor_row >= len(filtered)):
-            table.move_cursor(row=0)
+        new_row = 0
+        if toggled_chain_id is not None:
+            for i, c in enumerate(self.filtered_chains):
+                if c.get("chainId") == toggled_chain_id:
+                    new_row = i
+                    break
+        else:
+            if table.cursor_row is not None and table.cursor_row < len(filtered):
+                new_row = table.cursor_row
+
+        if filtered:
+            table.move_cursor(row=new_row)
 
     @on(DataTable.RowSelected, "#chain-table")
     def on_row_selected(self, event: DataTable.RowSelected) -> None:

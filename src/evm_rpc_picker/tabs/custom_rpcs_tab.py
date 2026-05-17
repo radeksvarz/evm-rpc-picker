@@ -64,7 +64,7 @@ class CustomRPCTab(Static):
         local_rpcs = cfg.local_config.get("custom_rpcs", {})
         for cid_str, rpcs in local_rpcs.items():
             for rpc in rpcs:
-                item = dict(rpc)
+                item = cfg.normalize_custom_rpc(rpc)
                 item["source"] = "local"
                 item["chain_id"] = int(cid_str)
                 self.rpcs.append(item)
@@ -73,7 +73,7 @@ class CustomRPCTab(Static):
         global_rpcs = cfg.global_config.get("custom_rpcs", {})
         for cid_str, rpcs in global_rpcs.items():
             for rpc in rpcs:
-                item = dict(rpc)
+                item = cfg.normalize_custom_rpc(rpc)
                 item["source"] = "global"
                 item["chain_id"] = int(cid_str)
                 self.rpcs.append(item)
@@ -105,15 +105,13 @@ class CustomRPCTab(Static):
             config_note = rpc.get("note", "")
             keyring_note = ""
 
-            if rpc.get("encrypted"):
-                url_display = f"🔑🔒 {url_display}"
-            elif rpc.get("has_secrets"):
-                url_display = f"🔒 {url_display}"
+            if rpc.get("rpc_password_protected"):
+                url_display = f"[🔒] {url_display}"
 
             if rpc.get("has_secrets"):
                 secret_data = cfg.load_rpc_secret(rpc_id)
                 if secret_data.get("status") == "needs_password":
-                    keyring_note = "[#f38ba8]🔑🔒 Locked[/]"
+                    keyring_note = "[#f38ba8][🔒] Locked[/]"
                 else:
                     keyring_note = secret_data.get("secret_note", "")
 

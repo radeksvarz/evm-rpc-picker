@@ -146,8 +146,9 @@ class RPCScreen(Screen[str]):
 
         custom = cm.get_custom_rpcs(int(cid))
         for c in custom:
+            c = cm.normalize_custom_rpc(c)
             url = c.get("url", "").strip()
-            is_encrypted = c.get("encrypted", False)
+            is_encrypted = c.get("rpc_password_protected", False)
             has_secrets = c.get("has_secrets", False)
             rpc_id = str(c.get("id"))
             if not rpc_id:
@@ -163,10 +164,14 @@ class RPCScreen(Screen[str]):
                     secret_data = cm.load_rpc_secret(rpc_id)
                     if secret_data.get("status") == "ok":
                         key = secret_data.get("api_key", "")
-                        final_url = url.replace("${API_KEY}", key)
+                        final_url = cm.resolve_url_secrets(url, rpc_id, key)
+                        display_url = final_url
+                    else:
+                        display_url = cm.mask_url_secrets(url, rpc_id)
+                else:
+                    display_url = cm.mask_url_secrets(url, rpc_id)
             else:
-                # Locked
-                display_url = url.replace("${API_KEY}", "********")
+                display_url = cm.mask_url_secrets(url, rpc_id)
 
             rpcs.append(
                 {
@@ -179,7 +184,7 @@ class RPCScreen(Screen[str]):
                     "is_secret": has_secrets,
                     "needs_password": needs_password,
                     "note": c.get("note", ""),
-                    "encrypted": c.get("encrypted", False),
+                    "rpc_password_protected": is_encrypted,
                 }
             )
         return rpcs
@@ -318,10 +323,8 @@ class RPCScreen(Screen[str]):
         url_display = str(d.get("display_url", ""))
         if d.get("name"):
             url_display = f"[{d['name']}] {url_display}"
-        if d.get("encrypted"):
-            url_display = f"🔑🔒 {url_display}"
-        elif d.get("is_secret"):
-            url_display = f"🔒 {url_display}"
+        if d.get("rpc_password_protected"):
+            url_display = f"[🔒] {url_display}"
         return url_display
 
     def _get_rpc_indicator(
@@ -368,7 +371,7 @@ class RPCScreen(Screen[str]):
 
     async def ping_rpc(self, client: httpx.AsyncClient, item: dict[str, Any]) -> None:
         url = item.get("actual_url", "")
-        if not url or "${API_KEY}" in url:
+        if not url or "${API_KEY}" in url or "{{secret:" in url:
             item["latency"] = None
             return
 
@@ -438,7 +441,7 @@ class RPCScreen(Screen[str]):
         if secret_data.get("status") == "ok":
             key = secret_data.get("api_key", "")
             url = item.get("url", "")
-            final_url = url.replace("********", key)
+            final_url = cm.resolve_url_secrets(url, rpc_id, key)
             self.dismiss(final_url)
         elif secret_data.get("status") == "wrong_password":
             self.picker_app.notify("Wrong password", severity="error")

@@ -120,7 +120,7 @@ if rpc_url:
 - All sensitive data (API keys, Secret Notes) are stored in the system keyring (macOS Keychain, Windows Vault, Linux Secret Service).
 - Each custom RPC can optionally have its own password for **additional encryption within the keyring** (AES). Indicated by `rpc_password_protected` flag in config and lock icon `[🔒]` in front of URL.
 - `Config Note` (Public): Saved in TOML config files, not encrypted, portable between machines: `note` config field.
-- `Keyring Note` (Private): Saved in the encrypted system keyring.
+- `Keyring Note` (Private): Saved in the encrypted system keyring. Indicated by the `note_in_keyring` field in config.
 - If the keyring is unlocked, the app automatically measures latency even for private RPCs.
 - API keys must never be stored in plain text within configuration TOML files (use placeholder `{{secret:key-name}}`).
 

@@ -267,7 +267,7 @@ def test_add_custom_rpc_with_secrets(temp_config):
 
     custom = cm.get_custom_rpcs(1)
     assert len(custom) == 1
-    assert custom[0]["url"] == "https://mainnet.infura.io/v3/${API_KEY}"
+    assert custom[0]["url"].startswith("https://mainnet.infura.io/v3/{{secret:rpc_")
     assert custom[0]["has_secrets"] is True
 
 
@@ -325,7 +325,7 @@ def test_update_global_rpc_with_secrets(temp_config):
         mock_set.assert_called_once()
 
     custom = cm.get_custom_rpcs(1)
-    assert custom[0]["url"] == "https://infura.io/v3/${API_KEY}"
+    assert custom[0]["url"] == f"https://infura.io/v3/{{{{secret:{rpc_id}}}}}"
     assert custom[0]["source"] == "global"
 
 

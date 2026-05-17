@@ -178,17 +178,65 @@ class ConfigManager:
             return parts[0] + "/v2/${API_KEY}", parts[1]
         return url, ""
 
+    @staticmethod
+    def resolve_url_secrets(url: str, key_name: str, secret_value: str) -> str:
+        """Resolve secret placeholders in URL."""
+        resolved = url.replace("${API_KEY}", secret_value)
+        resolved = resolved.replace(f"{{{{secret:{key_name}}}}}", secret_value)
+        return resolved
+
+    @staticmethod
+    def mask_url_secrets(url: str, key_name: str) -> str:
+        """Mask secret placeholders in URL for display."""
+        masked = url.replace("${API_KEY}", "********")
+        masked = masked.replace(f"{{{{secret:{key_name}}}}}", "********")
+        return masked
+
+    @staticmethod
+    def normalize_custom_rpc(rpc: dict[str, Any]) -> dict[str, Any]:
+        """Normalize a custom RPC dict to ensure compatibility with old and new schemas."""
+        item = dict(rpc)
+
+        # Normalize password protection flag
+        if "rpc_password_protected" in item:
+            item["encrypted"] = item["rpc_password_protected"]
+        elif "encrypted" in item:
+            item["rpc_password_protected"] = item["encrypted"]
+        else:
+            item["rpc_password_protected"] = False
+            item["encrypted"] = False
+
+        url = item.get("url", "")
+        # Check if URL contains placeholders
+        has_secret_placeholder = "{{secret:" in url or "${API_KEY}" in url
+
+        # Normalize note_in_keyring flag
+        if "note_in_keyring" not in item:
+            item["note_in_keyring"] = item.get("has_secrets", False) and not has_secret_placeholder
+
+        # Populate has_secrets for backward compatibility
+        has_sec = item.get("has_secrets", False)
+        has_note = item.get("note_in_keyring", False)
+        item["has_secrets"] = has_sec or has_note or has_secret_placeholder
+        return item
+
     def get_custom_rpcs(self, chain_id: int) -> list[dict[str, Any]]:
         """Get custom RPCs for a chain from both configs."""
         # Merge global and local custom RPCs
-        global_rpcs = self.global_config.get("custom_rpcs", {}).get(str(chain_id), [])
-        local_rpcs = self.local_config.get("custom_rpcs", {}).get(str(chain_id), [])
+        global_rpcs = [
+            dict(r) for r in self.global_config.get("custom_rpcs", {}).get(str(chain_id), [])
+        ]
+        local_rpcs = [
+            dict(r) for r in self.local_config.get("custom_rpcs", {}).get(str(chain_id), [])
+        ]
 
         # Tag them for UI differentiation
         for rpc in global_rpcs:
             rpc["source"] = "global"
+            rpc.update(self.normalize_custom_rpc(rpc))
         for rpc in local_rpcs:
             rpc["source"] = "project"
+            rpc.update(self.normalize_custom_rpc(rpc))
 
         return cast(list[dict[str, Any]], local_rpcs + global_rpcs)
 
@@ -223,14 +271,19 @@ class ConfigManager:
         if cid_str not in custom_rpcs:
             custom_rpcs[cid_str] = []
 
+        if api_key:
+            config_url = base_url.replace("${API_KEY}", f"{{{{secret:{rpc_id}}}}}")
+        else:
+            config_url = url
+
         entry = {
             "id": rpc_id,
             "name": rpc_data.get("name", ""),
-            "url": base_url if api_key else url,
+            "url": config_url,
             "note": rpc_data.get("note", ""),
             "network_type": rpc_data.get("network_type", "Production"),
-            "encrypted": is_encrypted,
-            "has_secrets": bool(api_key or secret_note),
+            "rpc_password_protected": is_encrypted,
+            "note_in_keyring": bool(secret_note),
         }
 
         custom_rpcs[cid_str].append(entry)
@@ -282,14 +335,19 @@ class ConfigManager:
             self.delete_secret(rpc_id)
 
         # 2. Update public part
+        if api_key:
+            config_url = base_url.replace("${API_KEY}", f"{{{{secret:{rpc_id}}}}}")
+        else:
+            config_url = url
+
         entry = {
             "id": rpc_id,
             "name": rpc_data.get("name", ""),
-            "url": base_url if api_key else url,
+            "url": config_url,
             "note": rpc_data.get("note", ""),
             "network_type": rpc_data.get("network_type", "Production"),
-            "encrypted": is_encrypted,
-            "has_secrets": bool(api_key or secret_note),
+            "rpc_password_protected": is_encrypted,
+            "note_in_keyring": bool(secret_note),
         }
 
         custom_rpcs[cid_str][index] = entry
