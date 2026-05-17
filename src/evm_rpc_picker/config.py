@@ -266,15 +266,23 @@ class ConfigManager:
         base_url, api_key = self.smart_extract_key(url)
 
         secret_note = rpc_data.get("secret_note", "")
-        password = rpc_data.get("password")
+
+        # Determine if we should encrypt
+        if rpc_data.get("encrypt") or password:
+            if password is None:
+                password = rpc_data.get("password")
+            is_encrypted = bool(password)
+            if not is_encrypted:
+                password = None
+        else:
+            password = None
+            is_encrypted = False
 
         # Only use keyring if there's something secret
         rpc_id = f"rpc_{chain_id}_{int(time.time())}"
-        is_encrypted = False
 
         if api_key or secret_note:
             self.save_rpc_secret(rpc_id, api_key, secret_note, password=password)
-            is_encrypted = password is not None
 
         # 2. Save public part
         custom_rpcs = config.get("custom_rpcs", {})
@@ -338,8 +346,16 @@ class ConfigManager:
         url = rpc_data.get("url", "")
         base_url, api_key = self.smart_extract_key(url)
         secret_note = rpc_data.get("secret_note", "")
-        password = rpc_data.get("password")
-        is_encrypted = password is not None
+
+        # Determine if we should encrypt
+        password = None
+        if rpc_data.get("encrypt"):
+            password = rpc_data.get("password")
+            is_encrypted = bool(password)
+            if not is_encrypted:
+                password = None
+        else:
+            is_encrypted = False
 
         if api_key or secret_note:
             self.save_rpc_secret(rpc_id, api_key, secret_note, password=password)
